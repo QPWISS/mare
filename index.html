@@ -279,7 +279,7 @@ setInterval(()=>{if(me&&me.role==='admin'&&(db.notes.some(n=>!n.seen)||db.orders
 const SB_URL='https://wzlgdnzhspbuddutgfaj.supabase.co',SB_KEY='sb_publishable_YwpU-vCZe8PvQ_3DtZNU9Q_K3nxd9I1';
 const sb=supabase.createClient(SB_URL,SB_KEY);
 const nph=p=>{p=String(p).replace(/\D/g,'');if(p.startsWith('00'))p=p.slice(2);if(p.startsWith('963'))p='0'+p.slice(3);return p};
-const emailOf=p=>nph(p)+'@maraa.app';
+const emailOf=p=>'p'+nph(p)+'@gmail.com';
 db={fee:2000,notes:[],orders:[],stores:[],users:[],banner:{t:'اتصل نصل - مارع',s:''}};
 let prev={};
 const fail=e=>{console.error(e);alert('تعذّر تنفيذ العملية. تحقق من اتصال الإنترنت وحاول مرة أخرى.')};
@@ -311,7 +311,7 @@ async function auth(){
  try{let r;
   if(mode==='reg'){const nm=$('nm').value.trim();if(!nm)return e.textContent='أدخل اسمك';
    r=await sb.auth.signUp({email:emailOf(ph),password:pw,options:{data:{phone:ph,name:nm}}});
-   if(r.error)return e.textContent=/registered|exists/i.test(r.error.message)?'هذا الرقم مسجّل مسبقاً، يرجى تسجيل الدخول':'تعذّر إنشاء الحساب';
+   if(r.error)return e.textContent=/registered|exists/i.test(r.error.message)?'هذا الرقم مسجّل مسبقاً، يرجى تسجيل الدخول':'تعذّر إنشاء الحساب ('+r.error.message+')';
    if(!r.data.session)return e.textContent='لم يكتمل التسجيل، يرجى المحاولة لاحقاً';
   }else{r=await sb.auth.signInWithPassword({email:emailOf(ph),password:pw});if(r.error)return e.textContent='الرقم أو كلمة السر غير صحيحة'}
   await enter(r.data.user);
