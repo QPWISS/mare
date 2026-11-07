@@ -7,7 +7,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;800&display=swap" rel="stylesheet">
 <style>
 :root{--bg:#f4f6f2;--card:#fff;--ink:#16211b;--mut:#667269;--pri:#1f4d3a;--pi:#fff;--acc:#f2b51b;--line:#dfe5dc;--bad:#b3261e;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#101712;--card:#18221b;--ink:#eaf0ea;--mut:#9aa89e;--pri:#4fa37c;--pi:#06150d;--line:#2a372e;--bad:#ff8a80}}
+@media (prefers-color-scheme:dark) and (min-width:99999px){:root:not([data-theme="light"]){--bg:#101712;--card:#18221b;--ink:#eaf0ea;--mut:#9aa89e;--pri:#4fa37c;--pi:#06150d;--line:#2a372e;--bad:#ff8a80}}
 :root[data-theme="dark"]{--bg:#101712;--card:#18221b;--ink:#eaf0ea;--mut:#9aa89e;--pri:#4fa37c;--pi:#06150d;--line:#2a372e;--bad:#ff8a80}
 *{box-sizing:border-box}
 html,body{margin:0;background:var(--bg);color:var(--ink);font-family:Tajawal,Tahoma,Arial,sans-serif;font-size:16px;line-height:1.5}
@@ -38,7 +38,7 @@ input,select,textarea{font:inherit;width:100%;padding:10px;border-radius:10px;bo
 .note{font-size:13px;background:var(--card);border:1px dashed var(--line);border-radius:10px;padding:8px;color:var(--mut)}
 .store{border-inline-start:4px solid var(--pri);padding-inline-start:8px;margin:6px 0}
 :root{--bg:#f2f5f6;--card:#fff;--ink:#12262c;--mut:#62767c;--pri:#0b3d4a;--pi:#fff;--acc:#ff7a1a;--line:#e1e8ea;--bad:#c62828;--sh:0 1px 2px rgba(11,61,74,.06),0 4px 14px rgba(11,61,74,.07)}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0b171a;--card:#13262b;--ink:#e8f1f3;--mut:#93a9af;--pri:#3fb6c9;--pi:#04181c;--acc:#ff8a3a;--line:#22393f;--bad:#ff8a80;--sh:none}}
+@media (prefers-color-scheme:dark) and (min-width:99999px){:root:not([data-theme="light"]){--bg:#0b171a;--card:#13262b;--ink:#e8f1f3;--mut:#93a9af;--pri:#3fb6c9;--pi:#04181c;--acc:#ff8a3a;--line:#22393f;--bad:#ff8a80;--sh:none}}
 :root[data-theme="dark"]{--bg:#0b171a;--card:#13262b;--ink:#e8f1f3;--mut:#93a9af;--pri:#3fb6c9;--pi:#04181c;--acc:#ff8a3a;--line:#22393f;--bad:#ff8a80;--sh:none}
 button.acc,.bar button,.tag,.alert{color:#2b1300}
 .tag.ok{background:var(--pri);color:var(--pi)}
@@ -81,7 +81,7 @@ button.acc,.bar button,.tag,.alert{color:#2b1300}
 .bar{bottom:calc(64px + env(safe-area-inset-bottom,0px));padding-bottom:10px;margin:0 10px;border-radius:16px}
 
 :root{--bg:#f5f8f8;--pri:#0d5677;--acc:#ff9a1a;--line:#dce8ee}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--pri:#4bb4d6;--acc:#ffa52e}}
+@media (prefers-color-scheme:dark) and (min-width:99999px){:root:not([data-theme="light"]){--pri:#4bb4d6;--acc:#ffa52e}}
 :root[data-theme="dark"]{--pri:#4bb4d6;--acc:#ffa52e}
 button.acc,.bar button,.tag,.alert{color:#2b1b05}
 .lgm{height:48px;width:48px;object-fit:contain;border-radius:13px}
@@ -114,6 +114,21 @@ textarea{min-height:90px}
 .cover.noimg{aspect-ratio:auto;height:130px}
 .info.two{grid-template-columns:1fr 1fr}
 label.btn{cursor:pointer}
+.top{padding:8px 0}
+.top h1{font-size:19px}
+.sbar{margin:4px 0 6px;background:var(--card);box-shadow:var(--sh);border:0;border-radius:14px}
+.chips{display:flex;gap:10px;overflow-x:auto;padding:6px 2px 10px;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex:0 0 auto;display:flex;flex-direction:column;align-items:center;gap:6px;background:none;color:var(--ink);font-size:12px;font-weight:700;padding:0;width:72px;line-height:1.3}
+.chip span{width:58px;height:58px;border-radius:50%;background:var(--card);box-shadow:var(--sh);display:grid;place-items:center;font-size:28px}
+.scard.big{display:block;padding:0;overflow:hidden;margin:10px 0}
+.simg{position:relative;aspect-ratio:16/8;background:var(--card);display:grid;place-items:center;font-size:44px}
+.simg img{width:100%;height:100%;object-fit:cover;display:block}
+.simg.noimg{background:#e6eef2}
+.simg em{position:absolute;inset:0;background:rgba(0,0,0,.45);color:#fff;display:grid;place-items:center;font-style:normal;font-weight:800;font-size:18px}
+.srow{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;font-size:16px}
+.hero{background:#fff1dd;color:#0d3a52;padding:12px 14px;border-radius:14px}
+.hero b{font-size:16px}
 </style>
 </head>
 <body>
@@ -153,7 +168,7 @@ const note=t=>{db.notes.push({id:Date.now()+Math.random(),t,seen:false})};
 
 function setTab(t){tab=t;render()}
 function head(){const r={customer:'زبون',admin:'مدير',driver:'سائق'}[me.role];
-return `<header class="top"><div class="logo"><img class="lgm" src="${LOGO_MARK}" alt=""><div><h1>اتصل نصل</h1><div class="sub">مارع</div></div></div><div class="who"><span>${esc(me.name)}</span><small>${r}</small><button class="alt sm" onclick="logout()">خروج</button></div></header>`}
+return `<header class="top"><div class="logo"><img class="lgm" src="${LOGO_MARK}" alt=""><div><h1>اتصل نصل</h1><div class="sub">${me.role==='customer'?'التوصيل ضمن مارع':'مارع'}</div></div></div>${me.role==='customer'?'':`<div class="who"><span>${esc(me.name)}</span><small>${r}</small><button class="alt sm" onclick="logout()">خروج</button></div>`}</header>`}
 function logout(){me=null;cart={};tab='home';render()}
 
 /* ---------- auth ---------- */
@@ -181,7 +196,7 @@ const cartCount=()=>Object.values(cart).reduce((a,b)=>a+b,0);
 const cartSum=()=>Object.entries(cart).reduce((a,[id,q])=>{const f=find(id);return a+(f?f.p.price*q:0)},0);
 function custView(){
 const on=(...k)=>k.includes(tab)?'on':'';
-const t=`<div class="nav"><button class="${on('home','store')}" onclick="cat=null;setTab('home')">🏠<small>الرئيسية</small></button><button class="${on('search')}" onclick="setTab('search')">🔍<small>بحث</small></button><button class="${on('cart')}" onclick="setTab('cart')">🛒<small>سلّتي${cartCount()?' ('+cartCount()+')':''}</small></button><button class="${on('mine')}" onclick="setTab('mine')">🧾<small>طلباتي</small></button></div>`;
+const t=`<div class="nav"><button class="${on('home','store')}" onclick="cat=null;setTab('home')">🏠<small>الرئيسية</small></button><button class="${on('cart')}" onclick="setTab('cart')">🛒<small>سلّتي${cartCount()?' ('+cartCount()+')':''}</small></button><button class="${on('mine')}" onclick="setTab('mine')">🧾<small>طلباتي</small></button></div>`;
 let b='';
 if(tab==='home')b=homeView();if(tab==='store')b=storeView();if(tab==='search')b=searchView();
 if(tab==='cart'){
@@ -189,9 +204,10 @@ if(!cartCount())b='<div class="card mut">سلّتك فارغة. اختر منت�
 else{const by={};Object.entries(cart).forEach(([id,q])=>{const f=find(id);if(f)(by[f.s.id]=by[f.s.id]||[]).push([f.p,q])});
 b=Object.entries(by).map(([sid,l])=>`<div class="card"><b>${esc(sname(sid))}</b>${l.map(([p,q])=>`<div class="row"><span>${esc(p.name)} × ${q}</span><span>${fm(p.price*q)}</span></div>`).join('')}</div>`).join('')+
 `<div class="card"><div class="row"><span>المنتجات</span><span>${fm(cartSum())}</span></div><div class="row"><span>رسوم التوصيل</span><span>${fm(db.fee)}</span></div><div class="row"><b>المجموع</b><b>${fm(cartSum()+db.fee)}</b></div>
-<button class="alt" style="width:100%;margin:8px 0" onclick="getLoc()">${loc?'✅ تمت مشاركة موقعك (اضغط للتحديث)':'📍 شارك موقعي (اختياري)'}</button><label class="mut">وصف المكان (اختياري)</label><input id="place" value="${esc(place)}" oninput="place=this.value" placeholder="مثال: بالقرب من الجامع الكبير"><button style="width:100%" onclick="send()">إرسال الطلب</button></div>`}}
+<button class="alt" style="width:100%;margin:8px 0" onclick="getLoc()">${loc?'✅ تمت مشاركة موقعك (اضغط للتحديث)':'📍 شارك موقعي (اختياري)'}</button><label class="mut">وصف المكان (اختياري)</label><input id="place" value="${esc(place)}" oninput="place=this.value" placeholder="مثال: بالقرب من الجامع الكبير"><button class="acc" style="width:100%" onclick="send()">إرسال الطلب</button></div>`}}
 if(tab==='mine'){const l=db.orders.filter(o=>o.cust===me.phone).reverse();
 b=l.map(o=>`<div class="card"><div class="row"><b>طلب #${o.id}</b><span class="tag ${o.status==='delivered'?'ok':''}">${custLabel(o)}</span></div>${custProg(o)}<div class="mut">${o.items.map(i=>esc(i.name)+' × '+i.q).join('، ')}</div><div>المجموع ${fm(sub(o)+o.fee)}</div>${o.status==='new'?`<button class="alt sm" style="margin-top:8px;color:var(--bad);border-color:var(--bad)" onclick="cancelMine(${o.id})">إلغاء الطلب</button>`:''}</div>`).join('')||'<div class="card mut">لا توجد لديك طلبات بعد.</div>'}
+if(tab==='mine')b=`<div class="card row"><span>${esc(me.name)} · ${esc(me.phone)}</span><button class="alt sm" onclick="logout()">تسجيل الخروج</button></div>`+b;
 const bar=['home','store','search'].includes(tab)&&cartCount()?`<div class="bar"><span>${cartCount()} منتج · ${fm(cartSum())}</span><button onclick="setTab('cart')">سلّتي</button></div>`:'';
 return t+b+bar}
 function send(){const items=Object.entries(cart).map(([id,q])=>{const f=find(id);return f&&{sid:f.s.id,pid:id,name:f.p.name,price:f.p.price,q}}).filter(Boolean);if(!items.length)return;
@@ -219,7 +235,7 @@ if(tab==='stores'){
 b=db.stores.map(s=>`<div class="card"><div class="row"><b>${esc(s.name)}</b><button class="alt sm" onclick="togStore('${s.id}')">${s.open?'إغلاق المحل':'فتح المحل'}</button></div><div class="mut">${esc(s.phone||'بدون رقم')}</div><div class="row" style="margin:8px 0;gap:8px;justify-content:flex-start">${s.image_url?`<img class="pimg" src="${esc(s.image_url)}" alt="">`:''}<label class="btn alt sm">📷 ${s.image_url?'تغيير الصورة':'إضافة صورة'}<input type="file" accept="image/*" hidden onchange="setStoreImg('${s.id}',this)"></label><button class="alt sm" style="color:var(--bad);border-color:var(--bad)" onclick="delStore('${s.id}')">حذف المحل</button></div>
 ${s.products.map(p=>`<div class="row" style="margin-top:6px"><span>${esc(p.name)} · ${fm(p.price)}</span><button class="alt sm" onclick="togProd('${p.id}')">${p.on?'إخفاء':'إظهار'}</button></div>`).join('')}</div>`).join('')+
 `<h2>إضافة محل</h2><div class="card"><input id="sn" placeholder="اسم المحل"><select id="sc">${CATS.map(c=>`<option value="${c[0]}">${c[2]} ${c[1]}</option>`).join('')}</select><label class="mut">صورة أو شعار المتجر (اختياري)</label><input id="si" type="file" accept="image/*"><input id="sp" type="tel" placeholder="رقم واتساب المحل (اختياري)"><button onclick="addStore()">إضافة المحل</button></div>
-<h2>إضافة منتج</h2><div class="card"><select id="ps">${db.stores.map(s=>`<option value="${s.id}">${esc(s.name)}</option>`).join('')}</select><input id="pn" placeholder="اسم المنتج"><input id="pg" placeholder="القسم داخل المتجر (مثال: وجبات)"><label class="mut">صورة المنتج (اختياري)</label><input id="pi" type="file" accept="image/*"><input id="pp" type="number" inputmode="numeric" placeholder="السعر"><button onclick="addProd()">إضافة المنتج</button><h2 style="font-size:15px">إضافة جماعية</h2><textarea id="bulk" rows="4" placeholder="كل منتج في سطر، مثال:&#10;شاورما دجاج - 15000"></textarea><button class="alt" onclick="bulkProd()">إضافة الكل</button></div><h2>لافتة العروض</h2><div class="card"><input id="bt" value="${esc(db.banner.t)}"><input id="bs" value="${esc(db.banner.s)}"><button onclick="setBanner()">حفظ اللافتة</button></div>`}
+<h2>إضافة منتج</h2><div class="card"><select id="ps">${db.stores.map(s=>`<option value="${s.id}">${esc(s.name)}</option>`).join('')}</select><input id="pn" placeholder="اسم المنتج"><input id="pg" placeholder="القسم داخل المتجر (مثال: وجبات)"><label class="mut">صورة المنتج (اختياري)</label><input id="pi" type="file" accept="image/*"><input id="pp" type="number" inputmode="numeric" placeholder="السعر"><button onclick="addProd()">إضافة المنتج</button><h2 style="font-size:15px">إضافة جماعية</h2><textarea id="bulk" rows="4" placeholder="كل منتج في سطر، مثال:&#10;شاورما دجاج - 15000"></textarea><button class="alt" onclick="bulkProd()">إضافة الكل</button></div><h2>لافتة العروض</h2><div class="card"><div class="mut">لا تظهر اللافتة للزبائن إلا عندما تكتب عرضاً حقيقياً بدل العنوان الافتراضي.</div><input id="bt" value="${esc(db.banner.t)}"><input id="bs" value="${esc(db.banner.s)}"><button onclick="setBanner()">حفظ اللافتة</button></div>`}
 if(tab==='drivers'){
 b='<h2>السائقون المسجّلون</h2>'+db.users.filter(u=>u.role==='driver').map(d=>`<div class="card"><div class="row"><b>${esc(d.name)}</b><span class="mut">${esc(d.phone)}</span></div><div class="row" style="margin-top:8px;gap:8px;justify-content:flex-start"><button class="alt sm" onclick="editDrv('${d.id}')">تعديل الاسم</button><button class="alt sm" style="color:var(--bad);border-color:var(--bad)" onclick="delDrv('${d.id}')">حذف</button></div></div>`).join('')+
 `${pendHTML()}<h2>إضافة سائق</h2><div class="card"><div class="mut">اكتب اسم السائق ورقمه. عندما يسجّل حساباً بهذا الرقم يصبح سائقاً تلقائياً.</div><input id="dn" placeholder="اسم السائق"><input id="dp" type="tel" placeholder="رقم هاتف السائق"><button onclick="addDrv()">إضافة السائق</button></div>`}
@@ -248,7 +264,7 @@ function setBanner(){db.banner={t:$('bt').value.trim()||'اتصل نصل - ما�
 function openStore(id){sid=id;grp0=null;tab='store';render();window.scrollTo(0,0)}
 function pickCat(c){cat=c;render()}
 const prodRow=(p,open)=>`<div class="row prow">${p.image_url?`<img class="pimg" src="${esc(p.image_url)}" alt="">`:''}<div style="flex:1"><b>${esc(p.name)}</b><div class="mut">${fm(p.price)}</div></div>${open?`<div class="qty"><button class="alt sm" onclick="qd('${p.id}',-1)" aria-label="إنقاص">−</button><b>${cart[p.id]||0}</b><button class="sm" onclick="qd('${p.id}',1)" aria-label="زيادة">+</button></div>`:'<span class="tag off">مغلق</span>'}</div>`;
-const storeCard=s=>`<button class="scard" onclick="openStore('${s.id}')">${avh(s)}<div><b>${esc(s.name)}</b><div class="mut">${catI(s.cat)[1]}</div></div><span class="tag ${s.open?'ok':'off'}">${s.open?'مفتوح':'مغلق'}</span></button>`;
+const storeCard=s=>`<button class="scard big" onclick="openStore('${s.id}')"><div class="simg${s.image_url?'':' noimg'}">${s.image_url?`<img src="${esc(s.image_url)}" alt="">`:`<span>${catI(s.cat)[2]}</span>`}${s.open?'':'<em>مغلق</em>'}</div><div class="srow"><b>${esc(s.name)}</b><span class="mut">${catI(s.cat)[1]}</span></div></button>`;
 function homeView(){const l=db.stores.filter(s=>!cat||s.cat===cat);
 return `<div class="deliv">التوصيل ضمن <b>مارع</b></div><input readonly placeholder="🔍 ابحث عن متجر أو منتج" onclick="setTab('search')"><div class="hero"><b>${esc(db.banner.t)}</b><span>${esc(db.banner.s)}</span></div>`
 +(cat?`<div class="row"><h2>${catI(cat)[2]} ${catI(cat)[1]}</h2><button class="alt sm" onclick="pickCat(null)">عرض الكل ✕</button></div>`:`<div class="cats">${CATS.map(c=>`<button class="cat" onclick="pickCat('${c[0]}')"><span>${c[2]}</span>${c[1]}</button>`).join('')}</div><h2>المتاجر</h2>`)
@@ -351,7 +367,7 @@ async function addProd(){const n=$('pn').value.trim(),v=$('pp').value;if(!n||v==
 function bulkProd(){const st=$('ps').value,g=$('pg').value.trim()||'المنتجات';
  const rows=$('bulk').value.split('\n').map(l=>l.match(/^(.+?)\s*[-–:،,]\s*([\d.]+)\s*$/)).filter(Boolean).map(m=>({store_id:st,name:m[1].trim(),price:+m[2],grp:g}));
  if(!rows.length)return alert('اكتب كل منتج في سطر بالشكل: الاسم - السعر');act(sb.from('products').insert(rows))}
-function setBanner(){act(sb.from('settings').update({banner_t:$('bt').value.trim()||'اتصل نصل - مارع',banner_s:$('bs').value.trim()}).eq('id',1))}
+function setBanner(){act(sb.from('settings').update({banner_t:$('bt').value.trim(),banner_s:$('bs').value.trim()}).eq('id',1))}
 function setFee(){const v=+$('fee').value;if(v>=0)act(sb.from('settings').update({fee:v}).eq('id',1))}
 async function addDrv(){const p=nph($('dp').value),n=($('dn')&&$('dn').value.trim())||'';if(!/^\d{9,15}$/.test(p))return alert('أدخل رقماً صحيحاً');
  const a=await sb.from('driver_invites').upsert({phone:p,name:n});if(a.error)return fail(a.error);
@@ -386,6 +402,11 @@ function delInv(ph){if(confirm('هل تريد حذف هذا الرقم من قا
 async function setStoreImg(id,inp){const f=inp.files[0];if(!f)return;try{const u=await upImg(f,1000);act(sb.from('stores').update({image_url:u}).eq('id',id))}catch(e){fail(e)}}
 function delStore(id){const s=db.stores.find(x=>x.id===id);if(!s)return;if(!confirm('هل تريد حذف المتجر "'+s.name+'" وكل منتجاته نهائياً؟'))return;act(sb.from('stores').delete().eq('id',id))}
 function cancelMine(id){if(!confirm('هل تريد إلغاء الطلب؟'))return;act(sb.rpc('cancel_my_order',{p_id:id}))}
+function homeView(){
+ if(cat){const l=db.stores.filter(s=>s.cat===cat);return `<div class="pghead"><button class="alt sm" onclick="back()">→</button><b>${catI(cat)[2]} ${catI(cat)[1]}</b><span class="mut">${l.length} متجر</span></div>`+(l.map(storeCard).join('')||'<div class="card mut">لا توجد متاجر في هذا القسم بعد.</div>')}
+ const bn=db.banner&&db.banner.t&&db.banner.t!=='اتصل نصل - مارع',l=[...db.stores].sort((a,b)=>(b.open?1:0)-(a.open?1:0));
+ return `<input readonly class="sbar" placeholder="🔍 ابحث عن متجر أو منتج" onclick="setTab('search')"><div class="chips">${CATS.map(c=>`<button class="chip" onclick="pickCat('${c[0]}')"><span>${c[2]}</span>${c[1]}</button>`).join('')}</div>${bn?`<div class="hero"><b>${esc(db.banner.t)}</b>${db.banner.s?`<span>${esc(db.banner.s)}</span>`:''}</div>`:''}<h2>المتاجر</h2>`+(l.map(storeCard).join('')||'<div class="card mut">لا توجد متاجر بعد.</div>')}
+function searchView(){return `<div class="pghead"><button class="alt sm" onclick="tab='home';render()">→</button><b>بحث</b></div><input id="sq" value="${esc(q)}" oninput="doSearch(this.value)" placeholder="ابحث عن متجر أو منتج" autofocus><div id="res">${resHTML()}</div>`}
 (async()=>{render();
  try{const r=await sb.auth.getSession();if(r.data.session)await enter(r.data.session.user)}catch(e){console.error(e)}
  setInterval(pull,5000);
