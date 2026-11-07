@@ -155,6 +155,9 @@ button:disabled{opacity:.5}
 .mpin{position:absolute;left:50%;top:50%;transform:translate(-50%,-100%);font-size:38px;pointer-events:none;z-index:1000}
 .mf{display:flex;gap:10px;padding:12px 14px calc(12px + env(safe-area-inset-bottom,0px))}
 .mf button{flex:1}
+.card.late{border-inline-start:5px solid var(--bad)}
+.lnk{color:var(--pri);font-weight:700;text-decoration:underline}
+.stats b{font-size:20px}
 </style>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css">
 </head>
@@ -251,29 +254,29 @@ if(tab==='orders'){
 const un=db.notes.filter(n=>!n.seen);
 b=statBar()+un.map(n=>`<div class="alert row"><span>${esc(n.t)}</span><button class="sm" onclick="seen(${n.id})">تم</button></div>`).join('');
 const drv=db.users.filter(u=>u.role==='driver');
-const card=o=>`<div class="card st-${o.status}"><div class="row"><b>طلب #${o.id}</b><span class="tag ${o.status==='delivered'?'ok':''}">${STATUS[o.status]}</span></div>
-<div class="mut">${esc(o.custName)} · ${esc(o.cust)}${o.place?' · '+esc(o.place):''}</div>
+const card=o=>`<div class="card st-${o.status}${isLate(o)?' late':''}"><div class="row"><b>طلب #${o.id}</b><span class="tag ${o.status==='delivered'?'ok':''}">${STATUS[o.status]}</span></div>
+<div class="mut"><a href="#" class="lnk" onclick="openCust('${o.cid}');return false">${esc(o.custName)}</a> · ${esc(o.cust)}${o.place?' · '+esc(o.place):''}</div>${lateTag(o)}
 ${Object.entries(grp(o)).map(([sid,l])=>`<div class="store"><b>${esc(sname(sid))}</b> <span class="mut">${l.map(i=>esc(i.name)+' × '+i.q).join('، ')}</span><br><a class="btn alt sm" target="_blank" rel="noopener" href="${wa(sphone(sid),orderText(o,sid))}">واتساب للمحل</a></div>`).join('')}
 <div class="row" style="margin-top:6px"><span>منتجات ${fm(sub(o))} + توصيل ${fm(o.fee)}</span><a class="btn alt sm" target="_blank" rel="noopener" href="${wa(o.cust,'مرحباً، بخصوص طلبك #'+o.id)}">واتساب للزبون</a></div>${o.loc?`<div style="margin-top:6px">${mp(o)}</div>`:''}
-${o.status==='new'?`<div class="row" style="margin-top:8px;gap:8px"><button class="acc" style="flex:1" onclick="acc(${o.id})">قبول الطلب</button><button class="alt" onclick="rej(${o.id})">رفض الطلب</button></div>`:''}${['accepted','assigned'].includes(o.status)?`<select onchange="assign(${o.id},this.value)"><option value="">${o.driver?'تغيير السائق':'اختر سائقاً'}</option>${drv.map(d=>`<option value="${d.id}" ${d.id===o.driver?'selected':''}>${esc(d.name)}</option>`).join('')}</select>`:''}
-${o.driver?`<div class="mut">السائق: ${esc((db.users.find(u=>u.id===o.driver)||{}).name||'')}</div>`:''}</div>`;
+${o.status==='new'?`<div class="row" style="margin-top:8px;gap:8px"><button class="acc" style="flex:1" onclick="acc(${o.id})">قبول الطلب</button><button class="alt" onclick="rej(${o.id})">رفض الطلب</button></div>`:''}${['accepted','assigned'].includes(o.status)?`<select onchange="assign(${o.id},this.value)"><option value="">${o.driver?'تغيير السائق':'اختر سائقاً'}</option>${drv.map(d=>`<option value="${d.id}" ${d.id===o.driver?'selected':''}>${esc(d.name)} — ${dload(d.id)}</option>`).join('')}</select>`:''}
+${o.driver?`<div class="mut">السائق: ${esc((db.users.find(u=>u.id===o.driver)||{}).name||'')}</div>`:''}<button class="alt sm" style="color:var(--bad);border-color:var(--bad);margin-top:8px" onclick="delOrder(${o.id})">حذف الطلب</button></div>`;
 const fin=o=>['delivered','cancelled'].includes(o.status),live=db.orders.filter(o=>!fin(o)).reverse(),done=db.orders.filter(fin).reverse().slice(0,10);
 b+=(live.map(card).join('')||'<div class="card mut">لا توجد طلبات جارية. عند وصول طلب جديد سيظهر هنا مع صوت تنبيه.</div>')+(done.length?'<h2>المنتهية</h2>'+done.map(card).join(''):'')}
 if(tab==='stores'){
-b=db.stores.map(s=>`<div class="card"><div class="row"><b>${esc(s.name)}</b><button class="alt sm" onclick="togStore('${s.id}')">${s.open?'إغلاق المحل':'فتح المحل'}</button></div><div class="mut">${esc(s.phone||'بدون رقم')}</div><div class="row" style="margin:8px 0;gap:8px;justify-content:flex-start">${s.image_url?`<img class="pimg" src="${esc(s.image_url)}" alt="">`:''}<label class="btn alt sm">📷 ${s.image_url?'تغيير الصورة':'إضافة صورة'}<input type="file" accept="image/*" hidden onchange="setStoreImg('${s.id}',this)"></label><button class="alt sm" style="color:var(--bad);border-color:var(--bad)" onclick="delStore('${s.id}')">حذف المحل</button></div>
-${s.products.map(p=>`<div class="row" style="margin-top:6px"><span>${esc(p.name)} · ${fm(p.price)}</span><button class="alt sm" onclick="togProd('${p.id}')">${p.on?'إخفاء':'إظهار'}</button></div>`).join('')}</div>`).join('')+
+b=db.stores.map(s=>`<div class="card"><div class="row"><b>${esc(s.name)}</b><span style="display:flex;gap:6px"><button class="alt sm" onclick="editStore('${s.id}')">تعديل</button><button class="alt sm" onclick="togStore('${s.id}')">${s.open?'إغلاق':'فتح'}</button></span></div><div class="mut">${esc(s.phone||'بدون رقم')}</div><div class="row" style="margin:8px 0;gap:8px;justify-content:flex-start">${s.image_url?`<img class="pimg" src="${esc(s.image_url)}" alt="">`:''}<label class="btn alt sm">📷 ${s.image_url?'تغيير الصورة':'إضافة صورة'}<input type="file" accept="image/*" hidden onchange="setStoreImg('${s.id}',this)"></label><button class="alt sm" style="color:var(--bad);border-color:var(--bad)" onclick="delStore('${s.id}')">حذف المحل</button></div>
+${s.products.map(p=>`<div class="row prow"><span>${esc(p.name)} · ${fm(p.price)}</span><span style="display:flex;gap:6px"><button class="alt sm" onclick="editProd('${p.id}')">تعديل</button><button class="alt sm" onclick="togProd('${p.id}')">${p.on?'إخفاء':'إظهار'}</button><button class="alt sm" style="color:var(--bad);border-color:var(--bad)" onclick="delProd('${p.id}')">حذف</button></span></div>`).join('')}</div>`).join('')+
 `<h2>إضافة محل</h2><div class="card"><input id="sn" placeholder="اسم المحل"><select id="sc">${CATS.map(c=>`<option value="${c[0]}">${c[2]} ${c[1]}</option>`).join('')}</select><label class="mut">صورة أو شعار المتجر (اختياري)</label><input id="si" type="file" accept="image/*"><input id="sp" type="tel" placeholder="رقم واتساب المحل (اختياري)"><button onclick="addStore()">إضافة المحل</button></div>
 <h2>إضافة منتج</h2><div class="card"><select id="ps">${db.stores.map(s=>`<option value="${s.id}">${esc(s.name)}</option>`).join('')}</select><input id="pn" placeholder="اسم المنتج"><input id="pg" placeholder="القسم داخل المتجر (مثال: وجبات)"><label class="mut">صورة المنتج (اختياري)</label><input id="pi" type="file" accept="image/*"><input id="pp" type="number" step="any" inputmode="decimal" placeholder="السعر بالليرة التركية ₺"><button onclick="addProd()">إضافة المنتج</button><h2 style="font-size:15px">إضافة جماعية</h2><textarea id="bulk" rows="4" placeholder="كل منتج في سطر، مثال:&#10;شاورما دجاج - 15000"></textarea><button class="alt" onclick="bulkProd()">إضافة الكل</button></div><h2>لافتة العروض</h2><div class="card"><div class="mut">لا تظهر اللافتة للزبائن إلا عندما تكتب عرضاً حقيقياً بدل العنوان الافتراضي.</div><input id="bt" value="${esc(db.banner.t)}"><input id="bs" value="${esc(db.banner.s)}"><button onclick="setBanner()">حفظ اللافتة</button></div><h2>رقم واتساب الطلبات</h2><div class="card"><div class="mut">تصله طلبات الصيدليات والأدوات الكهربائية والمكتبات.</div><input id="aw" type="tel" value="${esc(db.wa||'')}" placeholder="مثال: 905xxxxxxxxx أو 09xxxxxxxx"><button onclick="setWA()">حفظ الرقم</button></div><h2>أقسام المكتبات والقرطاسية</h2><div class="card">${(db.secs||[]).filter(x=>x.cat==='offices').map(x=>`<div class="row prow"><span>${esc(x.name)}</span><button class="alt sm" style="color:var(--bad);border-color:var(--bad)" onclick="delSec('${x.id}')">حذف</button></div>`).join('')}<input id="sn2" placeholder="اسم القسم (مثال: دفاتر)"><button onclick="addSec()">إضافة قسم</button></div>`}
 if(tab==='drivers'){
 b='<h2>السائقون المسجّلون</h2>'+db.users.filter(u=>u.role==='driver').map(d=>`<div class="card"><div class="row"><b>${esc(d.name)}</b><span class="mut">${esc(d.phone)}</span></div><div class="row" style="margin-top:8px;gap:8px;justify-content:flex-start"><button class="alt sm" onclick="editDrv('${d.id}')">تعديل الاسم</button><button class="alt sm" style="color:var(--bad);border-color:var(--bad)" onclick="delDrv('${d.id}')">حذف</button></div></div>`).join('')+
-`${pendHTML()}<h2>إضافة سائق</h2><div class="card"><div class="mut">اكتب اسم السائق ورقمه. عندما يسجّل حساباً بهذا الرقم يصبح سائقاً تلقائياً.</div><input id="dn" placeholder="اسم السائق"><input id="dp" type="tel" placeholder="رقم هاتف السائق"><button onclick="addDrv()">إضافة السائق</button></div>`}
+`${pendHTML()}<h2>إضافة سائق</h2><div class="card"><div class="mut">اكتب اسم السائق ورقمه. عندما يسجّل حساباً بهذا الرقم يصبح سائقاً تلقائياً.</div><input id="dn" placeholder="اسم السائق"><input id="dp" type="tel" placeholder="رقم هاتف السائق"><button onclick="addDrv()">إضافة السائق</button></div>${adminsHTML()}`}
 if(tab==='report'){
 const d=db.orders.filter(o=>o.status==='delivered'&&new Date(o.t).toDateString()===new Date().toDateString());
 const per={};d.forEach(o=>o.items.forEach(i=>per[i.sid]=(per[i.sid]||0)+i.price*i.q));
 const per2={};d.forEach(o=>{if(o.driver)per2[o.driver]=(per2[o.driver]||0)+1});
 b=`<div class="card"><div class="row"><b>طلبات اليوم المُسلَّمة</b><b>${d.length}</b></div><div class="row"><span>رسوم التوصيل</span><span>${fm(d.reduce((a,o)=>a+o.fee,0))}</span></div></div>
 <h2>مستحقات المحلات اليوم</h2>${Object.entries(per).map(([id,v])=>`<div class="card row"><span>${esc(sname(id))}</span><b>${fm(v)}</b></div>`).join('')||'<div class="card mut">لا يوجد بعد</div>'}
-<h2>طلبات كل سائق</h2>${Object.entries(per2).map(([p,v])=>`<div class="card row"><span>${esc((db.users.find(u=>u.id===p)||{}).name||p)}</span><b>${v}</b></div>`).join('')||'<div class="card mut">لا يوجد بعد</div>'}
+${driverReport()}<h2>طلبات كل سائق اليوم</h2>${Object.entries(per2).map(([p,v])=>`<div class="card row"><span>${esc((db.users.find(u=>u.id===p)||{}).name||p)}</span><b>${v}</b></div>`).join('')||'<div class="card mut">لا يوجد بعد</div>'}
 <h2>رسوم التوصيل</h2><div class="card"><input id="fee" type="number" value="${db.fee}"><button onclick="setFee()">حفظ الرسوم</button></div>`}
 return `<div class="nav">${t}</div>`+b}
 function seen(id){const n=db.notes.find(n=>n.id===id);if(n)n.seen=true;save();render()}
@@ -320,7 +323,7 @@ ${n?`<button class="acc" style="width:100%;margin-top:8px" onclick="adv(${o.id})
 function adv(id){const o=db.orders.find(o=>o.id===id),n=NEXT[o.status];if(!n)return;o.status=n[0];note(`${me.name}: ${n[1]} (طلب #${id})`);save();render()}
 
 /* ---------- core ---------- */
-function render(){$('app').innerHTML=!me?authView():head()+({customer:custView,admin:adminView,driver:driverView}[me.role])()}
+function render(){$('app').innerHTML=!me?authView():head()+({customer:custView,admin:adminPage,driver:driverView}[me.role])()}
 function beep(){try{const c=beep.c||(beep.c=new(window.AudioContext||window.webkitAudioContext)()),o=c.createOscillator(),g=c.createGain();o.frequency.value=880;g.gain.value=.25;o.connect(g);g.connect(c.destination);o.start();o.stop(c.currentTime+.3)}catch(e){}}
 function sync(){let r=null;try{r=localStorage.getItem(K)}catch(e){}
 if(r&&r!==last){load();me&&(me=db.users.find(u=>u.phone===me.phone)||me);const a=document.activeElement;if(!a||!/INPUT|SELECT|TEXTAREA/.test(a.tagName))render()}}
@@ -339,19 +342,19 @@ const e164=p=>'+'+intl(nph(p));
 let authBusy=false;
 db={fee:2000,notes:[],orders:[],stores:[],users:[],banner:{t:'اتصل نصل - مارع',s:''}};
 let prev={};
-const fail=e=>{console.error(e);alert('تعذّر تنفيذ العملية. تحقق من اتصال الإنترنت وحاول مرة أخرى.')};
+const fail=e=>{console.error(e);alert(/موقوف/.test((e&&e.message)||'')?e.message:'تعذّر تنفيذ العملية. تحقق من اتصال الإنترنت وحاول مرة أخرى.')};
 const act=async p=>{const r=await p;if(r.error){fail(r.error);return false}await pull();render();return true};
 async function pull(){
  if(!me)return;
  try{
   const q=[sb.from('stores').select('*').order('created_at'),sb.from('products').select('*').order('created_at'),sb.from('settings').select('*').eq('id',1).maybeSingle(),sb.from('orders').select('*').order('id',{ascending:false}).limit(200)];
   q.push(sb.from('sections').select('*').order('created_at').then(x=>x.error?{data:[]}:x));
-  if(me.role==='admin'){q.push(sb.from('profiles').select('*').eq('role','driver'));q.push(sb.from('driver_invites').select('*'))}
+  if(me.role==='admin'){q.push(sb.from('profiles').select('*').in('role',['driver','admin']));q.push(sb.from('driver_invites').select('*'))}
   const r=await Promise.all(q),bad=r.find(x=>x.error);if(bad)throw bad.error;
   const [s,p,st,o,sc,d,iv]=r;
   const stores=s.data.map(x=>({id:x.id,name:x.name,cat:x.cat,phone:x.phone,eta:x.eta,open:x.is_open,image_url:x.image_url,products:p.data.filter(y=>y.store_id===x.id).map(y=>({id:y.id,name:y.name,price:+y.price,g:y.grp,on:y.available,image_url:y.image_url}))}));
-  const orders=o.data.map(x=>({id:x.id,cust:x.customer_phone,custName:x.customer_name,place:x.place,loc:x.lat!=null?{lat:+x.lat,lng:+x.lng}:null,items:x.items.map(i=>({...i,price:+i.price})),fee:+x.fee,status:x.status,driver:x.driver_id,t:new Date(x.created_at).getTime()})).reverse();
-  const users=d?d.data.map(u=>({id:u.id,name:u.name,phone:u.phone,role:'driver'})):[];
+  const orders=o.data.map(x=>({id:x.id,cust:x.customer_phone,cid:x.customer_id,settled:!!x.settled,custName:x.customer_name,place:x.place,loc:x.lat!=null?{lat:+x.lat,lng:+x.lng}:null,items:x.items.map(i=>({...i,price:+i.price})),fee:+x.fee,status:x.status,driver:x.driver_id,t:new Date(x.created_at).getTime()})).reverse();
+  const users=d?d.data.map(u=>({id:u.id,name:u.name,phone:u.phone,role:u.role})):[];
   if(me.role==='admin')orders.forEach(x=>{const b=prev[x.id];if(b&&b!==x.status&&['picked','delivered'].includes(x.status))note((users.find(u=>u.id===x.driver)||{}).name+': '+(x.status==='picked'?'استلم الطلب':'سلّم الطلب')+' (طلب #'+x.id+')')});
   prev=Object.fromEntries(orders.map(x=>[x.id,x.status]));
   Object.keys(cart).forEach(k=>{if(!stores.some(z=>z.products.some(y=>y.id===k)))delete cart[k]});
@@ -464,6 +467,56 @@ async function saveLoc(){if(!mp_)return;const c=mp_.getCenter(),la=+c.lat.toFixe
 function setWA(){act(sb.from('settings').update({admin_whatsapp:$('aw').value.trim()}).eq('id',1))}
 function addSec(){const n=$('sn2').value.trim();if(n)act(sb.from('sections').insert({cat:'offices',name:n}))}
 function delSec(id){if(confirm('هل تريد حذف هذا القسم؟'))act(sb.from('sections').delete().eq('id',id))}
+const isLate=o=>{const m=(Date.now()-o.t)/60000;return (o.status==='new'&&m>3)||(['accepted','assigned','picked'].includes(o.status)&&m>45)};
+const lateTag=o=>isLate(o)?`<div class="tag" style="background:var(--bad);color:#fff;display:inline-block;margin-top:4px">⏰ ${o.status==='new'?'لم يُقبل بعد':'تأخر التسليم'}</div>`:'';
+function dload(id){const n=db.orders.filter(o=>o.driver===id&&!['delivered','cancelled'].includes(o.status)).length;return n?'عنده '+n+(n===1?' طلب':' طلبات'):'متاح'}
+function adminPage(){return tab==='cust'?custPage():adminView()}
+function editStore(id){const s=db.stores.find(x=>x.id===id);if(!s)return;const n=prompt('اسم المتجر',s.name);if(n===null||!n.trim())return;const ph=prompt('رقم واتساب المتجر',s.phone||'');if(ph===null)return;act(sb.from('stores').update({name:n.trim(),phone:ph.trim()}).eq('id',id))}
+function editProd(id){const f=find(id);if(!f)return;const n=prompt('اسم المنتج',f.p.name);if(n===null)return;const v=prompt('السعر بالليرة التركية',f.p.price);if(v===null||v===''||isNaN(+v))return;const g=prompt('القسم داخل المتجر',f.p.g||'المنتجات');if(g===null)return;act(sb.from('products').update({name:n.trim()||f.p.name,price:+v,grp:g.trim()||'المنتجات'}).eq('id',id))}
+function delProd(id){const f=find(id);if(f&&confirm('حذف المنتج "'+f.p.name+'"؟'))act(sb.from('products').delete().eq('id',id))}
+function delOrder(id){if(confirm('هل تريد حذف هذا الطلب نهائياً؟ سيختفي من التقارير أيضاً.'))act(sb.from('orders').delete().eq('id',id))}
+let ccid=null,cprof=null;
+async function openCust(id){ccid=id;cprof=null;tab='cust';render();window.scrollTo(0,0);const r=await sb.from('profiles').select('*').eq('id',id).maybeSingle();cprof=r.data;render()}
+function custPage(){const os=db.orders.filter(o=>o.cid===ccid),dn=os.filter(o=>o.status==='delivered'),tot=dn.reduce((a,o)=>a+sub(o)+o.fee,0),p=cprof,nm=p?p.name:(os[0]||{}).custName||'',ph=p?p.phone:(os[0]||{}).cust||'';
+ return `<div class="pghead"><button class="alt sm" onclick="setTab('orders')">→</button><b>ملف الزبون</b></div>
+<div class="card"><div class="row"><b style="font-size:18px">${esc(nm)}</b>${p&&p.blocked?'<span class="tag" style="background:var(--bad);color:#fff">محظور</span>':''}</div><div class="mut">${esc(ph)}</div>
+<div class="row" style="margin-top:10px;gap:8px;justify-content:flex-start"><a class="btn alt sm" target="_blank" rel="noopener" href="${wa(ph,'مرحباً '+nm)}">واتساب</a><a class="btn alt sm" href="tel:${esc(ph)}">اتصال</a>${p&&p.lat!=null?`<a class="btn alt sm" target="_blank" rel="noopener" href="https://www.google.com/maps?q=${p.lat},${p.lng}">📍 الموقع</a>`:''}</div></div>
+<div class="stats"><div><b>${os.length}</b>طلبات</div><div><b>${dn.length}</b>مُسلَّمة</div><div><b>${fm(tot)}</b>الإجمالي</div></div>
+${p?`<button class="alt" style="width:100%;color:var(--bad);border-color:var(--bad)" onclick="blockCust('${p.id}',${!p.blocked})">${p.blocked?'إلغاء الحظر':'حظر الزبون'}</button>`:''}
+<h2>طلباته</h2>`+(os.slice().reverse().map(o=>`<div class="card row"><span>طلب #${o.id} · ${STATUS[o.status]}</span><b>${fm(sub(o)+o.fee)}</b></div>`).join('')||'<div class="card mut">لا توجد طلبات.</div>')}
+async function blockCust(id,f){if(!confirm(f?'هل تريد حظر هذا الزبون؟ لن يستطيع إرسال طلبات.':'إلغاء الحظر؟'))return;const r=await sb.rpc('set_blocked',{p_id:id,p_blocked:f});if(r.error)return fail(r.error);const q=await sb.from('profiles').select('*').eq('id',id).maybeSingle();cprof=q.data;render()}
+function adminsHTML(){const l=db.users.filter(u=>u.role==='admin');
+ return '<h2>المدراء</h2>'+l.map(u=>`<div class="card"><div class="row"><b>${esc(u.name)}${u.id===me.id?' (أنت)':''}</b><span class="mut">${esc(u.phone)}</span></div>${u.id===me.id?'':`<button class="alt sm" style="margin-top:8px;color:var(--bad);border-color:var(--bad)" onclick="delAdmin('${u.id}')">إزالة الصلاحية</button>`}</div>`).join('')+`<div class="card"><div class="mut">يجب أن يكون المدير الجديد قد سجّل حساباً في التطبيق.</div><input id="ap" type="tel" placeholder="رقم المدير الجديد"><button onclick="addAdmin()">تعيينه مديراً</button></div>`}
+async function addAdmin(){const p=nph($('ap').value);if(!/^\d{9,15}$/.test(p))return alert('أدخل رقماً صحيحاً');const r=await sb.rpc('set_role',{p_phone:p,p_role:'admin'});if(r.error)return fail(r.error);await pull();render();if(!db.users.some(u=>u.phone===p&&u.role==='admin'))alert('لم يُعثر على حساب بهذا الرقم. يجب أن يسجّل حساباً في التطبيق أولاً.')}
+function delAdmin(id){const u=db.users.find(x=>x.id===id);if(!u||id===me.id)return;if(confirm('إزالة صلاحية المدير عن '+u.name+'؟'))act(sb.rpc('set_role',{p_phone:u.phone,p_role:'customer'}))}
+let rp='unsettled';
+function setRp(v){rp=v;render()}
+function inPeriod(o){const d=new Date(o.t),n=new Date();if(rp==='unsettled')return !o.settled;if(rp==='today')return d.toDateString()===n.toDateString();return (n-d)/864e5<=(rp==='week'?7:30)}
+function driverReport(){const drv=db.users.filter(u=>u.role==='driver');
+ const chips=[['unsettled','غير المسوّى'],['today','اليوم'],['week','7 أيام'],['month','30 يوماً']].map(([k,n])=>`<button class="${rp===k?'':'alt'} sm" onclick="setRp('${k}')">${n}</button>`).join('');
+ return `<h2>حسابات السائقين</h2><div class="row" style="gap:6px;justify-content:flex-start;flex-wrap:wrap;margin-bottom:8px">${chips}</div>`+(drv.map(d=>{const os=db.orders.filter(o=>o.driver===d.id&&o.status==='delivered'&&inPeriod(o)),un=os.filter(o=>!o.settled),col=os.reduce((a,o)=>a+sub(o)+o.fee,0),pay=os.reduce((a,o)=>a+sub(o),0);
+ return `<div class="card"><div class="row"><b>${esc(d.name)}</b><span class="mut">${os.length} طلب</span></div><div class="row"><span>المحصّل من الزبائن</span><span>${fm(col)}</span></div><div class="row"><span>المدفوع للمتاجر</span><span>${fm(pay)}</span></div><div class="row tot"><b>رسوم التوصيل</b><b>${fm(col-pay)}</b></div>${un.length?`<button class="acc" style="width:100%;margin-top:8px" onclick="settle('${d.id}')">تمت التسوية (${un.length} طلب)</button>`:'<div class="mut" style="margin-top:6px">✓ لا يوجد غير مسوّى</div>'}</div>`}).join('')||'<div class="card mut">لا يوجد سائقون.</div>')}
+function settle(did){const ids=db.orders.filter(o=>o.driver===did&&o.status==='delivered'&&!o.settled&&inPeriod(o)).map(o=>o.id);if(!ids.length||!confirm('تأكيد تسوية '+ids.length+' طلب؟'))return;act(sb.rpc('settle_orders',{p_ids:ids}))}
+let shift=false,wl=null;
+const ack=new Set((()=>{try{return JSON.parse(localStorage.getItem('maraa_ack')||'[]')}catch(e){return[]}})());
+async function startShift(){shift=true;beep();try{if(navigator.wakeLock)wl=await navigator.wakeLock.request('screen')}catch(e){}render()}
+function endShift(){shift=false;try{wl&&wl.release()}catch(e){}wl=null;render()}
+document.addEventListener('visibilitychange',async()=>{if(shift&&document.visibilityState==='visible'&&navigator.wakeLock){try{wl=await navigator.wakeLock.request('screen')}catch(e){}}});
+function ackOrd(id){ack.add(id);try{localStorage.setItem('maraa_ack',JSON.stringify([...ack]))}catch(e){}render()}
+setInterval(()=>{if(me&&me.role==='driver'&&shift&&db.orders.some(o=>o.driver===me.id&&o.status==='assigned'&&!ack.has(o.id))){beep();try{navigator.vibrate&&navigator.vibrate([300,150,300])}catch(e){}}},2500);
+setInterval(()=>{const a=document.activeElement;if(me&&me.role==='admin'&&tab==='orders'&&!(a&&/INPUT|SELECT|TEXTAREA/.test(a.tagName)))render()},30000);
+function driverView(){
+ const mine=db.orders.filter(o=>o.driver===me.id),live=mine.filter(o=>!['delivered','cancelled'].includes(o.status)),td=new Date().toDateString(),done=mine.filter(o=>o.status==='delivered'&&new Date(o.t).toDateString()===td),
+ col=done.reduce((a,o)=>a+sub(o)+o.fee,0),pay=done.reduce((a,o)=>a+sub(o),0);
+ const head=shift?`<div class="card row"><div><b>🟢 الدوام فعّال</b><div class="mut">الشاشة تبقى مضاءة ويرنّ الجوال عند وصول طلب</div></div><button class="alt sm" onclick="endShift()">إنهاء الدوام</button></div>`:`<div class="card" style="text-align:center"><b>ابدأ دوامك لتصلك الطلبات</b><div class="mut" style="margin:4px 0 10px">يُبقي الشاشة مضاءة ويفعّل صوت التنبيه</div><button class="acc big" style="width:100%" onclick="startShift()">بدء الدوام</button></div>`;
+ const cards=live.map(o=>{const g=grp(o),n=NEXT[o.status],fresh=o.status==='assigned'&&!ack.has(o.id);
+  return `<div class="card${fresh?' st-new':''}">${fresh?'<div class="alert row"><span>🔔 طلب جديد معيّن لك</span><button class="sm" onclick="ackOrd('+o.id+')">علمت</button></div>':''}<div class="row"><b>طلب #${o.id}</b><span class="tag">${STATUS[o.status]}</span></div>
+${Object.entries(g).map(([sid,it])=>`<div class="store"><b>${esc(sname(sid))}</b><div class="mut">${it.map(i=>esc(i.name)+' × '+i.q).join('، ')}</div>المبلغ المطلوب دفعه للمحل: <b>${fm(it.reduce((a,i)=>a+i.price*i.q,0))}</b></div>`).join('')}
+<div class="row"><span>المبلغ المطلوب تحصيله من الزبون</span><b>${fm(sub(o)+o.fee)}</b></div><div class="mut">${esc(o.custName)}${o.place?' · '+esc(o.place):''}</div>
+<div class="row" style="margin-top:8px">${o.loc?`<a class="btn sm" target="_blank" rel="noopener" href="https://www.google.com/maps/dir/?api=1&destination=${o.loc.lat},${o.loc.lng}">📍 اتجاهات</a>`:''}<a class="btn alt sm" href="tel:${esc(o.cust)}">اتصال</a><a class="btn alt sm" target="_blank" rel="noopener" href="${wa(o.cust,'مرحباً، أنا سائق اتصل نصل - مارع بخصوص طلبك #'+o.id)}">واتساب</a></div>
+${n?`<button class="acc" style="width:100%;margin-top:8px" onclick="adv(${o.id})">${n[1]}</button>`:''}</div>`}).join('')||'<div class="card mut">لا توجد طلبات معيّنة لك الآن.</div>';
+ return head+'<h2>طلباتي الحالية</h2>'+cards+`<h2>ملخص اليوم</h2><div class="card"><div class="row"><span>طلبات مُسلَّمة</span><b>${done.length}</b></div><div class="row"><span>المحصّل من الزبائن</span><b>${fm(col)}</b></div><div class="row"><span>المدفوع للمتاجر</span><b>${fm(pay)}</b></div><div class="row tot"><b>رسوم التوصيل</b><b>${fm(col-pay)}</b></div></div>`
+ +(done.length?'<h2>طلبات اليوم المُسلَّمة</h2>'+done.slice().reverse().map(o=>`<div class="card row"><span>طلب #${o.id} · ${new Date(o.t).toLocaleTimeString('ar',{hour:'2-digit',minute:'2-digit'})}</span><b>${fm(sub(o)+o.fee)}</b></div>`).join(''):'')}
 (async()=>{render();
  try{const r=await sb.auth.getSession();if(r.data.session)await enter(r.data.session.user)}catch(e){console.error(e)}
  setInterval(pull,5000);
