@@ -110,6 +110,10 @@ textarea{min-height:90px}
 .gtabs{position:sticky;top:54px;background:var(--bg);z-index:5}
 .prow{padding:12px 0}
 .pimg{width:68px;height:68px}
+.cover{height:auto;aspect-ratio:16/10;max-height:360px}
+.cover.noimg{aspect-ratio:auto;height:130px}
+.info.two{grid-template-columns:1fr 1fr}
+label.btn{cursor:pointer}
 </style>
 </head>
 <body>
@@ -187,7 +191,7 @@ b=Object.entries(by).map(([sid,l])=>`<div class="card"><b>${esc(sname(sid))}</b>
 `<div class="card"><div class="row"><span>المنتجات</span><span>${fm(cartSum())}</span></div><div class="row"><span>رسوم التوصيل</span><span>${fm(db.fee)}</span></div><div class="row"><b>المجموع</b><b>${fm(cartSum()+db.fee)}</b></div>
 <button class="alt" style="width:100%;margin:8px 0" onclick="getLoc()">${loc?'✅ تمت مشاركة موقعك (اضغط للتحديث)':'📍 شارك موقعي (اختياري)'}</button><label class="mut">وصف المكان (اختياري)</label><input id="place" value="${esc(place)}" oninput="place=this.value" placeholder="مثال: بالقرب من الجامع الكبير"><button style="width:100%" onclick="send()">إرسال الطلب</button></div>`}}
 if(tab==='mine'){const l=db.orders.filter(o=>o.cust===me.phone).reverse();
-b=l.map(o=>`<div class="card"><div class="row"><b>طلب #${o.id}</b><span class="tag ${o.status==='delivered'?'ok':''}">${custLabel(o)}</span></div>${custProg(o)}<div class="mut">${o.items.map(i=>esc(i.name)+' × '+i.q).join('، ')}</div><div>المجموع ${fm(sub(o)+o.fee)}</div></div>`).join('')||'<div class="card mut">لا توجد لديك طلبات بعد.</div>'}
+b=l.map(o=>`<div class="card"><div class="row"><b>طلب #${o.id}</b><span class="tag ${o.status==='delivered'?'ok':''}">${custLabel(o)}</span></div>${custProg(o)}<div class="mut">${o.items.map(i=>esc(i.name)+' × '+i.q).join('، ')}</div><div>المجموع ${fm(sub(o)+o.fee)}</div>${o.status==='new'?`<button class="alt sm" style="margin-top:8px;color:var(--bad);border-color:var(--bad)" onclick="cancelMine(${o.id})">إلغاء الطلب</button>`:''}</div>`).join('')||'<div class="card mut">لا توجد لديك طلبات بعد.</div>'}
 const bar=['home','store','search'].includes(tab)&&cartCount()?`<div class="bar"><span>${cartCount()} منتج · ${fm(cartSum())}</span><button onclick="setTab('cart')">سلّتي</button></div>`:'';
 return t+b+bar}
 function send(){const items=Object.entries(cart).map(([id,q])=>{const f=find(id);return f&&{sid:f.s.id,pid:id,name:f.p.name,price:f.p.price,q}}).filter(Boolean);if(!items.length)return;
@@ -212,13 +216,13 @@ ${o.driver?`<div class="mut">السائق: ${esc((db.users.find(u=>u.id===o.driv
 const fin=o=>['delivered','cancelled'].includes(o.status),live=db.orders.filter(o=>!fin(o)).reverse(),done=db.orders.filter(fin).reverse().slice(0,10);
 b+=(live.map(card).join('')||'<div class="card mut">لا توجد طلبات جارية. عند وصول طلب جديد سيظهر هنا مع صوت تنبيه.</div>')+(done.length?'<h2>المنتهية</h2>'+done.map(card).join(''):'')}
 if(tab==='stores'){
-b=db.stores.map(s=>`<div class="card"><div class="row"><b>${esc(s.name)}</b><button class="alt sm" onclick="togStore('${s.id}')">${s.open?'إغلاق المحل':'فتح المحل'}</button></div><div class="mut">${esc(s.phone||'بدون رقم')}</div>
+b=db.stores.map(s=>`<div class="card"><div class="row"><b>${esc(s.name)}</b><button class="alt sm" onclick="togStore('${s.id}')">${s.open?'إغلاق المحل':'فتح المحل'}</button></div><div class="mut">${esc(s.phone||'بدون رقم')}</div><div class="row" style="margin:8px 0;gap:8px;justify-content:flex-start">${s.image_url?`<img class="pimg" src="${esc(s.image_url)}" alt="">`:''}<label class="btn alt sm">📷 ${s.image_url?'تغيير الصورة':'إضافة صورة'}<input type="file" accept="image/*" hidden onchange="setStoreImg('${s.id}',this)"></label><button class="alt sm" style="color:var(--bad);border-color:var(--bad)" onclick="delStore('${s.id}')">حذف المحل</button></div>
 ${s.products.map(p=>`<div class="row" style="margin-top:6px"><span>${esc(p.name)} · ${fm(p.price)}</span><button class="alt sm" onclick="togProd('${p.id}')">${p.on?'إخفاء':'إظهار'}</button></div>`).join('')}</div>`).join('')+
-`<h2>إضافة محل</h2><div class="card"><input id="sn" placeholder="اسم المحل"><select id="sc">${CATS.map(c=>`<option value="${c[0]}">${c[2]} ${c[1]}</option>`).join('')}</select><input id="se" placeholder="وقت التجهيز (مثال: 20-30 دقيقة)"><label class="mut">صورة أو شعار المتجر (اختياري)</label><input id="si" type="file" accept="image/*"><input id="sp" type="tel" placeholder="رقم واتساب المحل (اختياري)"><button onclick="addStore()">إضافة المحل</button></div>
+`<h2>إضافة محل</h2><div class="card"><input id="sn" placeholder="اسم المحل"><select id="sc">${CATS.map(c=>`<option value="${c[0]}">${c[2]} ${c[1]}</option>`).join('')}</select><label class="mut">صورة أو شعار المتجر (اختياري)</label><input id="si" type="file" accept="image/*"><input id="sp" type="tel" placeholder="رقم واتساب المحل (اختياري)"><button onclick="addStore()">إضافة المحل</button></div>
 <h2>إضافة منتج</h2><div class="card"><select id="ps">${db.stores.map(s=>`<option value="${s.id}">${esc(s.name)}</option>`).join('')}</select><input id="pn" placeholder="اسم المنتج"><input id="pg" placeholder="القسم داخل المتجر (مثال: وجبات)"><label class="mut">صورة المنتج (اختياري)</label><input id="pi" type="file" accept="image/*"><input id="pp" type="number" inputmode="numeric" placeholder="السعر"><button onclick="addProd()">إضافة المنتج</button><h2 style="font-size:15px">إضافة جماعية</h2><textarea id="bulk" rows="4" placeholder="كل منتج في سطر، مثال:&#10;شاورما دجاج - 15000"></textarea><button class="alt" onclick="bulkProd()">إضافة الكل</button></div><h2>لافتة العروض</h2><div class="card"><input id="bt" value="${esc(db.banner.t)}"><input id="bs" value="${esc(db.banner.s)}"><button onclick="setBanner()">حفظ اللافتة</button></div>`}
 if(tab==='drivers'){
-b=db.users.filter(u=>u.role==='driver').map(d=>`<div class="card"><div class="row"><b>${esc(d.name)}</b><span class="mut">${esc(d.phone)}</span></div><div class="row" style="margin-top:8px;gap:8px;justify-content:flex-start"><button class="alt sm" onclick="editDrv('${d.id}')">تعديل الاسم</button><button class="alt sm" style="color:var(--bad);border-color:var(--bad)" onclick="delDrv('${d.id}')">حذف</button></div></div>`).join('')+
-`<h2>تحويل حساب إلى سائق</h2><div class="card"><div class="mut">يسجّل السائق حساباً عادياً في التطبيق، ثم تكتب رقمه هنا.</div><input id="dp" type="tel" placeholder="رقم هاتف السائق"><button onclick="addDrv()">تعيينه سائقاً</button></div>`}
+b='<h2>السائقون المسجّلون</h2>'+db.users.filter(u=>u.role==='driver').map(d=>`<div class="card"><div class="row"><b>${esc(d.name)}</b><span class="mut">${esc(d.phone)}</span></div><div class="row" style="margin-top:8px;gap:8px;justify-content:flex-start"><button class="alt sm" onclick="editDrv('${d.id}')">تعديل الاسم</button><button class="alt sm" style="color:var(--bad);border-color:var(--bad)" onclick="delDrv('${d.id}')">حذف</button></div></div>`).join('')+
+`${pendHTML()}<h2>إضافة سائق</h2><div class="card"><div class="mut">اكتب اسم السائق ورقمه. عندما يسجّل حساباً بهذا الرقم يصبح سائقاً تلقائياً.</div><input id="dn" placeholder="اسم السائق"><input id="dp" type="tel" placeholder="رقم هاتف السائق"><button onclick="addDrv()">إضافة السائق</button></div>`}
 if(tab==='report'){
 const d=db.orders.filter(o=>o.status==='delivered'&&new Date(o.t).toDateString()===new Date().toDateString());
 const per={};d.forEach(o=>o.items.forEach(i=>per[i.sid]=(per[i.sid]||0)+i.price*i.q));
@@ -234,7 +238,7 @@ function acc(id){db.orders.find(o=>o.id===id).status='accepted';save();render()}
 function rej(id){if(!confirm('هل تريد رفض هذا الطلب؟'))return;db.orders.find(o=>o.id===id).status='cancelled';save();render()}
 function togStore(id){const s=db.stores.find(s=>s.id===id);s.open=!s.open;save();render()}
 function togProd(id){const f=find(id);f.p.on=!f.p.on;save();render()}
-function addStore(){const n=$('sn').value.trim();if(!n)return;db.stores.push({id:'s'+Date.now(),name:n,phone:$('sp').value.trim(),cat:$('sc').value,eta:$('se').value.trim()||'20-30 دقيقة',open:true,products:[]});save();render()}
+function addStore(){const n=$('sn').value.trim();if(!n)return;db.stores.push({id:'s'+Date.now(),name:n,phone:$('sp').value.trim(),cat:$('sc').value,open:true,products:[]});save();render()}
 function addProd(){const n=$('pn').value.trim(),p=+$('pp').value;if(!n||!p)return;db.stores.find(s=>s.id===$('ps').value).products.push({id:'p'+Date.now(),name:n,price:p,g:$('pg').value.trim()||'المنتجات',on:true});save();render()}
 function addDrv(){const n=$('dn').value.trim(),p=$('dp').value.trim(),w=$('dw').value;if(!n||!p||!w||db.users.some(u=>u.phone===p))return;db.users.push({phone:p,name:n,pass:w,role:'driver'});save();render()}
 function setFee(){const v=+$('fee').value;if(v>=0){db.fee=v;save();render()}}
@@ -244,7 +248,7 @@ function setBanner(){db.banner={t:$('bt').value.trim()||'اتصل نصل - ما�
 function openStore(id){sid=id;grp0=null;tab='store';render();window.scrollTo(0,0)}
 function pickCat(c){cat=c;render()}
 const prodRow=(p,open)=>`<div class="row prow">${p.image_url?`<img class="pimg" src="${esc(p.image_url)}" alt="">`:''}<div style="flex:1"><b>${esc(p.name)}</b><div class="mut">${fm(p.price)}</div></div>${open?`<div class="qty"><button class="alt sm" onclick="qd('${p.id}',-1)" aria-label="إنقاص">−</button><b>${cart[p.id]||0}</b><button class="sm" onclick="qd('${p.id}',1)" aria-label="زيادة">+</button></div>`:'<span class="tag off">مغلق</span>'}</div>`;
-const storeCard=s=>`<button class="scard" onclick="openStore('${s.id}')">${avh(s)}<div><b>${esc(s.name)}</b><div class="mut">${catI(s.cat)[1]} · ${esc(s.eta||'20-30 دقيقة')}</div></div><span class="tag ${s.open?'ok':'off'}">${s.open?'مفتوح':'مغلق'}</span></button>`;
+const storeCard=s=>`<button class="scard" onclick="openStore('${s.id}')">${avh(s)}<div><b>${esc(s.name)}</b><div class="mut">${catI(s.cat)[1]}</div></div><span class="tag ${s.open?'ok':'off'}">${s.open?'مفتوح':'مغلق'}</span></button>`;
 function homeView(){const l=db.stores.filter(s=>!cat||s.cat===cat);
 return `<div class="deliv">التوصيل ضمن <b>مارع</b></div><input readonly placeholder="🔍 ابحث عن متجر أو منتج" onclick="setTab('search')"><div class="hero"><b>${esc(db.banner.t)}</b><span>${esc(db.banner.s)}</span></div>`
 +(cat?`<div class="row"><h2>${catI(cat)[2]} ${catI(cat)[1]}</h2><button class="alt sm" onclick="pickCat(null)">عرض الكل ✕</button></div>`:`<div class="cats">${CATS.map(c=>`<button class="cat" onclick="pickCat('${c[0]}')"><span>${c[2]}</span>${c[1]}</button>`).join('')}</div><h2>المتاجر</h2>`)
@@ -296,15 +300,16 @@ async function pull(){
  if(!me)return;
  try{
   const q=[sb.from('stores').select('*').order('created_at'),sb.from('products').select('*').order('created_at'),sb.from('settings').select('*').eq('id',1).maybeSingle(),sb.from('orders').select('*').order('id',{ascending:false}).limit(200)];
-  if(me.role==='admin')q.push(sb.from('profiles').select('*').eq('role','driver'));
+  if(me.role==='admin'){q.push(sb.from('profiles').select('*').eq('role','driver'));q.push(sb.from('driver_invites').select('*'))}
   const r=await Promise.all(q),bad=r.find(x=>x.error);if(bad)throw bad.error;
-  const [s,p,st,o,d]=r;
+  const [s,p,st,o,d,iv]=r;
   const stores=s.data.map(x=>({id:x.id,name:x.name,cat:x.cat,phone:x.phone,eta:x.eta,open:x.is_open,image_url:x.image_url,products:p.data.filter(y=>y.store_id===x.id).map(y=>({id:y.id,name:y.name,price:+y.price,g:y.grp,on:y.available,image_url:y.image_url}))}));
   const orders=o.data.map(x=>({id:x.id,cust:x.customer_phone,custName:x.customer_name,place:x.place,loc:x.lat!=null?{lat:+x.lat,lng:+x.lng}:null,items:x.items.map(i=>({...i,price:+i.price})),fee:+x.fee,status:x.status,driver:x.driver_id,t:new Date(x.created_at).getTime()})).reverse();
   const users=d?d.data.map(u=>({id:u.id,name:u.name,phone:u.phone,role:'driver'})):[];
   if(me.role==='admin')orders.forEach(x=>{const b=prev[x.id];if(b&&b!==x.status&&['picked','delivered'].includes(x.status))note((users.find(u=>u.id===x.driver)||{}).name+': '+(x.status==='picked'?'استلم الطلب':'سلّم الطلب')+' (طلب #'+x.id+')')});
   prev=Object.fromEntries(orders.map(x=>[x.id,x.status]));
-  const nd={fee:st.data?+st.data.fee:2000,banner:{t:(st.data&&st.data.banner_t)||'اتصل نصل - مارع',s:(st.data&&st.data.banner_s)||''},stores,orders,users,notes:db.notes};
+  Object.keys(cart).forEach(k=>{if(!stores.some(z=>z.products.some(y=>y.id===k)))delete cart[k]});
+  const nd={fee:st.data?+st.data.fee:2000,banner:{t:(st.data&&st.data.banner_t)||'اتصل نصل - مارع',s:(st.data&&st.data.banner_s)||''},stores,orders,users,invites:iv?iv.data:[],notes:db.notes};
   const sig=JSON.stringify(nd);
   if(sig!==last){db=nd;const a=document.activeElement;if(!(a&&/INPUT|SELECT|TEXTAREA/.test(a.tagName))){last=sig;render()}}
  }catch(e){console.error(e)}
@@ -335,12 +340,12 @@ function assign(id,ph){if(!ph)return;const o=db.orders.find(o=>o.id===id),u={dri
 function adv(id){const o=db.orders.find(o=>o.id===id),n=NEXT[o.status];if(n)act(sb.from('orders').update({status:n[0]}).eq('id',id))}
 function togStore(id){const s=db.stores.find(s=>s.id===id);act(sb.from('stores').update({is_open:!s.open}).eq('id',id))}
 function togProd(id){const f=find(id);act(sb.from('products').update({available:!f.p.on}).eq('id',id))}
-async function upImg(file){const b=await createImageBitmap(file),k=Math.min(1,640/Math.max(b.width,b.height)),c=document.createElement('canvas');c.width=Math.round(b.width*k);c.height=Math.round(b.height*k);c.getContext('2d').drawImage(b,0,0,c.width,c.height);
+async function upImg(file,mx=640){const b=await createImageBitmap(file),k=Math.min(1,mx/Math.max(b.width,b.height)),c=document.createElement('canvas');c.width=Math.round(b.width*k);c.height=Math.round(b.height*k);c.getContext('2d').drawImage(b,0,0,c.width,c.height);
  const blob=await new Promise(r=>c.toBlob(r,'image/webp',.8)),ext=blob.type==='image/webp'?'webp':'png',path=Date.now()+'-'+Math.random().toString(36).slice(2,7)+'.'+ext;
  const r=await sb.storage.from('images').upload(path,blob,{contentType:blob.type});if(r.error)throw r.error;return sb.storage.from('images').getPublicUrl(path).data.publicUrl}
 function avh(s){return s.image_url?`<img class="av big" src="${esc(s.image_url)}" alt="">`:`<span class="av big">${catI(s.cat)[2]}</span>`}
-async function addStore(){const n=$('sn').value.trim();if(!n)return;let u=null;try{const f=$('si').files[0];if(f)u=await upImg(f)}catch(e){return fail(e)}
- act(sb.from('stores').insert({name:n,phone:$('sp').value.trim(),cat:$('sc').value,eta:$('se').value.trim()||'20-30 دقيقة',image_url:u}))}
+async function addStore(){const n=$('sn').value.trim();if(!n)return;let u=null;try{const f=$('si').files[0];if(f)u=await upImg(f,1000)}catch(e){return fail(e)}
+ act(sb.from('stores').insert({name:n,phone:$('sp').value.trim(),cat:$('sc').value,image_url:u}))}
 async function addProd(){const n=$('pn').value.trim(),v=$('pp').value;if(!n||v===''||+v<0)return;let u=null;try{const f=$('pi').files[0];if(f)u=await upImg(f)}catch(e){return fail(e)}
  act(sb.from('products').insert({store_id:$('ps').value,name:n,price:+v,grp:$('pg').value.trim()||'المنتجات',image_url:u}))}
 function bulkProd(){const st=$('ps').value,g=$('pg').value.trim()||'المنتجات';
@@ -348,7 +353,9 @@ function bulkProd(){const st=$('ps').value,g=$('pg').value.trim()||'المنتج
  if(!rows.length)return alert('اكتب كل منتج في سطر بالشكل: الاسم - السعر');act(sb.from('products').insert(rows))}
 function setBanner(){act(sb.from('settings').update({banner_t:$('bt').value.trim()||'اتصل نصل - مارع',banner_s:$('bs').value.trim()}).eq('id',1))}
 function setFee(){const v=+$('fee').value;if(v>=0)act(sb.from('settings').update({fee:v}).eq('id',1))}
-async function addDrv(){const p=nph($('dp').value);if(!p)return;const r=await sb.rpc('set_role',{p_phone:p,p_role:'driver'});if(r.error)return fail(r.error);alert('تمت العملية. إن لم يظهر السائق فتأكد أنه سجّل حساباً بنفس الرقم.');await pull();render()}
+async function addDrv(){const p=nph($('dp').value),n=($('dn')&&$('dn').value.trim())||'';if(!/^\d{9,15}$/.test(p))return alert('أدخل رقماً صحيحاً');
+ const a=await sb.from('driver_invites').upsert({phone:p,name:n});if(a.error)return fail(a.error);
+ const r=await sb.rpc('set_role',{p_phone:p,p_role:'driver'});if(r.error)return fail(r.error);await pull();render()}
 const CST=['new','accepted','picked','delivered'];
 function custLabel(o){return o.status==='assigned'?STATUS.accepted:STATUS[o.status]}
 function custProg(o){if(o.status==='cancelled')return '';const i=CST.indexOf(o.status==='assigned'?'accepted':o.status);return `<div class="steps">${CST.map((x,j)=>`<i class="${j<=i?'d':''}"></i>`).join('')}</div>`}
@@ -364,14 +371,21 @@ function homeView(){
 function storeView(){const s=db.stores.find(x=>x.id===sid);if(!s)return homeView();
  const gs=[...new Set(s.products.filter(p=>p.on).map(p=>p.g||'المنتجات'))],g=gs.includes(grp0)?grp0:gs[0];
  return `<div class="pghead"><button class="alt sm" onclick="back()">→</button><b>${esc(s.name)}</b><span class="tag ${s.open?'ok':'off'}">${s.open?'مفتوح':'مغلق'}</span></div>
-<div class="cover">${s.image_url?`<img src="${esc(s.image_url)}" alt="">`:`<span>${catI(s.cat)[2]}</span>`}</div>
-<div class="info"><div><small>رسوم التوصيل</small><b>${fm(db.fee)}</b></div><div><small>وقت التجهيز</small><b>${esc(s.eta||'20-30 دقيقة')}</b></div><div><small>القسم</small><b>${catI(s.cat)[1]}</b></div></div>
+<div class="cover${s.image_url?'':' noimg'}">${s.image_url?`<img src="${esc(s.image_url)}" alt="">`:`<span>${catI(s.cat)[2]}</span>`}</div>
+<div class="info two"><div><small>رسوم التوصيل</small><b>${fm(db.fee)}</b></div><div><small>القسم</small><b>${catI(s.cat)[1]}</b></div></div>
 <div class="gtabs">${gs.map(x=>`<button class="${x===g?'on':''}" data-g="${esc(x)}" onclick="grp0=this.dataset.g;render()">${esc(x)}</button>`).join('')}</div>`
  +(s.products.filter(p=>p.on&&(p.g||'المنتجات')===g).map(p=>prodRow(p,s.open)).join('')||'<div class="card mut">لا توجد منتجات في هذا المتجر بعد.</div>')}
 function editDrv(id){const d=db.users.find(u=>u.id===id);if(!d)return;const n=prompt('اسم السائق الجديد',d.name);if(!n||!n.trim())return;act(sb.rpc('admin_rename',{p_id:id,p_name:n.trim()}))}
 function delDrv(id){const d=db.users.find(u=>u.id===id);if(!d)return;
  if(db.orders.some(o=>o.driver===id&&!['delivered','cancelled'].includes(o.status)))return alert('لا يمكن حذفه لأن لديه طلبات جارية. أعد تعيينها لسائق آخر أولاً.');
- if(!confirm('هل تريد حذف هذا السائق؟ سيبقى حسابه كزبون عادي وتُسحب منه صلاحية السائق.'))return;act(sb.rpc('set_role',{p_phone:d.phone,p_role:'customer'}))}
+ if(!confirm('هل تريد حذف هذا السائق؟ سيبقى حسابه كزبون عادي وتُسحب منه صلاحية السائق.'))return;sb.from('driver_invites').delete().eq('phone',d.phone).then(()=>act(sb.rpc('set_role',{p_phone:d.phone,p_role:'customer'})))}
+function pendHTML(){const reg=new Set(db.users.map(u=>u.phone)),l=(db.invites||[]).filter(i=>!reg.has(i.phone));
+ return '<h2>أرقام بانتظار التسجيل</h2>'+(l.map(i=>`<div class="card"><div class="row"><b>${esc(i.name||'بدون اسم')}</b><span class="mut">${esc(i.phone)}</span></div><div class="row" style="margin-top:8px;gap:8px;justify-content:flex-start"><button class="alt sm" onclick="editInv('${esc(i.phone)}')">تعديل</button><button class="alt sm" style="color:var(--bad);border-color:var(--bad)" onclick="delInv('${esc(i.phone)}')">حذف</button></div></div>`).join('')||'<div class="card mut">لا توجد أرقام بانتظار التسجيل.</div>')}
+function editInv(ph){const i=(db.invites||[]).find(x=>x.phone===ph);if(!i)return;const n=prompt('اسم السائق',i.name);if(n===null)return;const np=nph(prompt('رقم الهاتف',i.phone)||i.phone);if(!/^\d{9,15}$/.test(np))return alert('رقم غير صحيح');act(sb.from('driver_invites').update({phone:np,name:n.trim()}).eq('phone',ph))}
+function delInv(ph){if(confirm('هل تريد حذف هذا الرقم من قائمة السائقين؟'))act(sb.from('driver_invites').delete().eq('phone',ph))}
+async function setStoreImg(id,inp){const f=inp.files[0];if(!f)return;try{const u=await upImg(f,1000);act(sb.from('stores').update({image_url:u}).eq('id',id))}catch(e){fail(e)}}
+function delStore(id){const s=db.stores.find(x=>x.id===id);if(!s)return;if(!confirm('هل تريد حذف المتجر "'+s.name+'" وكل منتجاته نهائياً؟'))return;act(sb.from('stores').delete().eq('id',id))}
+function cancelMine(id){if(!confirm('هل تريد إلغاء الطلب؟'))return;act(sb.rpc('cancel_my_order',{p_id:id}))}
 (async()=>{render();
  try{const r=await sb.auth.getSession();if(r.data.session)await enter(r.data.session.user)}catch(e){console.error(e)}
  setInterval(pull,5000);
