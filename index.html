@@ -135,7 +135,7 @@ const sb = supabase.createClient(SB_URL, SB_KEY);
 
 const CUR = '₺';
 const STATUS = {new:'جديد',accepted:'قيد التجهيز',assigned:'تم تعيين سائق',picked:'مع السائق في الطريق',delivered:'تم التسليم',cancelled:'تم إلغاء الطلب'};
-const NEXT = {assigned:['picked','استلمت الطلب'],picked:['delivered','سلّمت للزبون']};
+const NEXT = {assigned:['picked','استلمت الطلب'],accepted:['picked','استلمت الطلب'],picked:['delivered','سلّمت للزبون']};
 const CST = ['new','accepted','picked','delivered'];
 const CATS = [
   ['supermarket','ماركت','🛒'],
@@ -185,7 +185,7 @@ const sname = id => (db.stores.find(s => s.id === id) || { name: '؟' }).name;
 const sphone = id => (db.stores.find(s => s.id === id) || {}).phone || '';
 const note = t => { db.notes.push({ id: Date.now() + Math.random(), t, seen: false }); };
 
-const fail = e => { console.error(e); alert(/موقوف/.test((e && e.message) || '') ? e.message : 'تعذّر تنفيذ العملية. تحقق من اتصال الإنترنت وحاول مرة أخرى.'); };
+const fail = e => { console.error(e); const msg = (e && (e.message || e.details || e.hint)) || ''; alert(msg ? ('تنبيه: ' + msg) : 'تعذّر تنفيذ العملية. تحقق من اتصال الإنترنت وحاول مرة أخرى.'); };
 const act = async p => { const r = await p; if (r.error) { fail(r.error); return false; } await pull(); render(); return true; };
 
 async function pull() {
@@ -512,7 +512,39 @@ function seen(id) { const n = db.notes.find(n => n.id === id); if (n) n.seen = t
 function assign(id, ph) { if (!ph) return; const o = db.orders.find(o => o.id === id), u = { driver_id: ph }; if (o.status === 'accepted') u.status = 'assigned'; act(sb.from('orders').update(u).eq('id', id)); }
 function acc(id) { act(sb.from('orders').update({ status: 'accepted' }).eq('id', id)); }
 function rej(id) { if (!confirm('هل تريد رفض هذا الطلب؟')) return; act(sb.from('orders').update({ status: 'cancelled' }).eq('id', id)); }
-function adv(id) { const o = db.orders.find(o => o.id === id), n = NEXT[o.status]; if (n) act(sb.from('orders').update({ status: n[0] }).eq('id', id)); }
+async function adv(id, btn) {
+  const o = db.orders.find(o => o.id == id);
+  if (!o) return;
+  const n = NEXT[o.status];
+  if (!n) return;
+  const nextStatus = n[0];
+  if (btn) { btn.disabled = true; btn.textContent = 'جارٍ التحديث...'; }
+  
+  // 1. Try direct update
+  let r = await sb.from('orders').update({ status: nextStatus }).eq('id', id);
+  
+  // 2. If blocked by RLS, try fallback RPCs
+  if (r.error) {
+    const rpc1 = await sb.rpc('driver_advance_order', { p_id: id, p_status: nextStatus });
+    if (!rpc1.error) r = rpc1;
+    else {
+      const rpc2 = await sb.rpc('advance_order', { p_id: id, p_status: nextStatus });
+      if (!rpc2.error) r = rpc2;
+    }
+  }
+
+  if (r.error) {
+    console.error('adv error:', r.error);
+    alert('تعذّر تحديث الحالة: ' + (r.error.message || 'تحقق من صلاحيات RLS في Supabase'));
+    if (btn) { btn.disabled = false; btn.textContent = n[1]; }
+    return;
+  }
+
+  // Optimistic update
+  o.status = nextStatus;
+  render();
+  await pull();
+}
 function togStore(id) { const s = db.stores.find(s => s.id === id); act(sb.from('stores').update({ is_open: !s.open }).eq('id', id)); }
 function togProd(id) { const f = find(id); act(sb.from('products').update({ available: !f.p.on }).eq('id', id)); }
 function delProd(id) { const f = find(id); if (f && confirm('حذف المنتج "' + f.p.name + '"؟')) act(sb.from('products').delete().eq('id', id)); }
@@ -613,7 +645,7 @@ function driverView() {
 ${Object.entries(g).map(([sid,it])=>`<div class="store"><b>${esc(sname(sid))}</b><div class="mut">${it.map(i=>esc(i.name)+' × '+i.q).join('، ')}</div>المبلغ المطلوب دفعه للمحل: <b>${fm(it.reduce((a,i)=>a+i.price*i.q,0))}</b></div>`).join('')}
 <div class="row"><span>المبلغ المطلوب تحصيله من الزبون</span><b>${fm(sub(o)+o.fee)}</b></div><div class="mut">${esc(o.custName)}${o.place?' · '+esc(o.place):''}</div>
 <div class="row" style="margin-top:8px">${o.loc?`<a class="btn sm" target="_blank" rel="noopener" href="https://www.google.com/maps/dir/?api=1&destination=${o.loc.lat},${o.loc.lng}">📍 اتجاهات</a>`:''}<a class="btn alt sm" href="tel:${esc(o.cust)}">اتصال</a><a class="btn alt sm" target="_blank" rel="noopener" href="${wa(o.cust,'مرحباً، أنا سائق اتصل نصل - مارع بخصوص طلبك #'+o.id)}">واتساب</a></div>
-${n?`<button class="acc" style="width:100%;margin-top:8px" onclick="adv(${o.id})">${n[1]}</button>`:''}</div>`;
+${n?`<button class="acc" style="width:100%;margin-top:8px" onclick="adv(${o.id}, this)">${n[1]}</button>`:''}</div>`;
   }).join('') || '<div class="card mut">لا توجد طلبات معيّنة لك الآن.</div>';
 
   return head + '<h2>طلباتي الحالية</h2>' + cards + `<h2>ملخص اليوم</h2><div class="card"><div class="row"><span>طلبات مُسلَّمة</span><b>${done.length}</b></div><div class="row"><span>المحصّل من الزبائن</span><b>${fm(col)}</b></div><div class="row"><span>المدفوع للمتاجر</span><b>${fm(pay)}</b></div><div class="row tot"><b>رسوم التوصيل</b><b>${fm(col-pay)}</b></div></div>`
