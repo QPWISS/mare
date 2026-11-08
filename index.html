@@ -135,8 +135,11 @@ const sb = supabase.createClient(SB_URL, SB_KEY);
 
 const CUR = '₺';
 const STATUS = {new:'جديد',accepted:'قيد التجهيز',assigned:'تم تعيين سائق',picked:'مع السائق في الطريق',delivered:'تم التسليم',cancelled:'تم إلغاء الطلب'};
+const CUST_STATUS = {new:'تم إرسال الطلب',accepted:'قيد التجهيز',assigned:'قيد التجهيز',picked:'قيد التجهيز',delivered:'تم التسليم✅',cancelled:'تم إلغاء الطلب'};
 const NEXT = {assigned:['picked','استلمت الطلب'],accepted:['picked','استلمت الطلب'],picked:['delivered','سلّمت للزبون']};
-const CST = ['new','accepted','picked','delivered'];
+const CST = ['new','processing','delivered'];
+const dname = id => (db.users.find(u => u.id === id) || {}).name || '';
+const dphone = id => (db.users.find(u => u.id === id) || {}).phone || '';
 const CATS = [
   ['supermarket','ماركت','🛒'],
   ['veg','خضار وفواكه','🥬'],
@@ -196,11 +199,11 @@ async function pull() {
       sb.from('products').select('*').order('created_at'),
       sb.from('settings').select('*').eq('id', 1).maybeSingle(),
       sb.from('orders').select('*').order('id', { ascending: false }).limit(200),
-      sb.from('sections').select('*').order('created_at').then(x => x.error ? { data: [] } : x)
+      sb.from('sections').select('*').order('created_at').then(x => x.error ? { data: [] } : x),
+      sb.from('profiles').select('id, name, phone, role').in('role', ['driver', 'admin']).then(x => x.error ? { data: [] } : x)
     ];
     if (me.role === 'admin') {
-      queries.push(sb.from('profiles').select('*').in('role', ['driver', 'admin']));
-      queries.push(sb.from('driver_invites').select('*'));
+      queries.push(sb.from('driver_invites').select('*').then(x => x.error ? { data: [] } : x));
     }
     const r = await Promise.all(queries);
     const bad = r.find(x => x.error); if (bad) throw bad.error;
@@ -252,7 +255,7 @@ async function pull() {
 function setTab(t) { tab = t; render(); }
 function head() {
   const r = { customer: 'زبون', admin: 'مدير', driver: 'سائق' }[me.role];
-  return `<header class="top"><div class="logo"><div class="lgm" style="background:var(--acc);display:grid;place-items:center;font-size:24px">🛵</div><div><h1>اتصل نصل</h1><div class="sub">${me.role==='customer'?'التوصيل ضمن مارع':'مارع'}</div></div></div>${me.role==='customer'?'':`<div class="who"><span>${esc(me.name)}</span><small>${r}</small><button class="alt sm" onclick="logout()">خروج</button></div>`}</header>`;
+  return `<header class="top"><div class="logo"><img class="lgm" src="logo-mark.webp" alt="اتصل نصل"><div><h1>اتصل نصل</h1><div class="sub">${me.role==='customer'?'التوصيل ضمن مارع':'مارع'}</div></div></div>${me.role==='customer'?'':`<div class="who"><span>${esc(me.name)}</span><small>${r}</small><button class="alt sm" onclick="logout()">خروج</button></div>`}</header>`;
 }
 
 async function logout() {
@@ -262,7 +265,7 @@ async function logout() {
 
 function authView() {
   const reg = mode === 'reg';
-  return `<div class="auth"><div class="sub" style="font-size:24px;font-weight:800;color:var(--pri);margin-bottom:8px">🛵 اتصل نصل - مارع</div><div class="sub">نوصل طلبك إلى باب بيتك</div></div>
+  return `<div class="auth"><img class="lgf" src="logo.webp" alt="اتصل نصل - مارع" style="border-radius:24px;margin-bottom:10px"><div class="sub" style="font-size:18px;font-weight:800;color:var(--pri);margin-bottom:4px">اتصل نصل - مارع</div><div class="sub">نوصل طلبك إلى باب بيتك</div></div>
 <div class="card"><div class="tabs"><button class="${reg?'':'on'}" onclick="mode='login';render()">دخول</button><button class="${reg?'on':''}" onclick="mode='reg';render()">حساب جديد</button></div>
 <label>رقم الواتساب</label><input id="ph" type="tel" inputmode="tel" placeholder="09xxxxxxxx">
 ${reg?'<label>الاسم</label><input id="nm">':''}
@@ -350,9 +353,41 @@ function custView() {
     }
   }
   if (tab === 'mine') {
-    const l = db.orders.filter(o => o.cust === me.phone).reverse();
+    const l = db.orders.filter(o => o.cid === me.id || (o.cust && me.phone && nph(o.cust) === nph(me.phone))).reverse();
     b = `<div class="card row"><span>${esc(me.name)} · ${esc(me.phone)}</span><button class="alt sm" onclick="logout()">تسجيل الخروج</button></div>`
-      + (l.map(o => `<div class="card"><div class="row"><b>طلب #${o.id}</b><span class="tag ${o.status==='delivered'?'ok':''}">${custLabel(o)}</span></div>${custProg(o)}<div class="mut">${o.items.map(i=>esc(i.name)+' × '+i.q).join('، ')}</div><div>المجموع ${fm(sub(o)+o.fee)}</div>${o.status==='new'?`<button class="alt sm" style="margin-top:8px;color:var(--bad);border-color:var(--bad)" onclick="cancelMine(${o.id})">إلغاء الطلب</button>`:''}</div>`).join('') || '<div class="card mut">لا توجد لديك طلبات بعد.</div>');
+      + (l.map(o => `<div class="card st-${o.status}">
+          <div class="row">
+            <b>طلب #${o.id}</b>
+            <span class="tag ${o.status==='delivered'?'ok':(o.status==='cancelled'?'off':'')}">${custLabel(o)}</span>
+          </div>
+          ${custProg(o)}
+          <div class="mut" style="font-size:12px;margin:4px 0 8px">⏰ ${new Date(o.t).toLocaleDateString('ar-SY')} · ${new Date(o.t).toLocaleTimeString('ar-SY', {hour:'2-digit', minute:'2-digit'})}</div>
+          ${Object.entries(grp(o)).map(([sid, items]) => `
+            <div class="store">
+              <b>${esc(sname(sid))}</b>
+              <div class="mut">${items.map(i => esc(i.name) + ' × ' + i.q + ' (' + fm(i.price * i.q) + ')').join('، ')}</div>
+            </div>
+          `).join('')}
+          <div class="row" style="margin-top:6px;border-top:1px solid var(--line);padding-top:6px">
+            <span class="mut">المشتريات: ${fm(sub(o))} + التوصيل: ${fm(o.fee)}</span>
+            <b>المجموع: ${fm(sub(o) + o.fee)}</b>
+          </div>
+          ${o.driver ? `
+            <div class="card row" style="background:var(--bg);margin:8px 0 4px;padding:8px 10px;border-radius:12px">
+              <div>
+                <small class="mut">السائق المسند للطلب:</small>
+                <div style="font-weight:700">🛵 ${esc(dname(o.driver) || 'تم تعيين سائق')}</div>
+              </div>
+              ${dphone(o.driver) ? `
+                <div class="row" style="gap:6px">
+                  <a class="btn sm" href="tel:${esc(dphone(o.driver))}">اتصال</a>
+                  <a class="btn alt sm" target="_blank" rel="noopener" href="${wa(dphone(o.driver), 'مرحباً، أنا ' + me.name + ' بخصوص طلب #' + o.id)}">واتساب</a>
+                </div>
+              ` : ''}
+            </div>
+          ` : ''}
+          ${o.status==='new'?`<button class="alt sm" style="margin-top:8px;color:var(--bad);border-color:var(--bad);width:100%" onclick="cancelMine(${o.id})">إلغاء الطلب</button>`:''}
+        </div>`).join('') || '<div class="card mut">لا توجد لديك طلبات بعد.</div>');
   }
   const bar = ['home','store','search'].includes(tab) && cartCount() ? `<div class="bar"><span>${cartCount()} منتج · ${fm(cartSum())}</span><button onclick="setTab('cart')">سلّتي</button></div>` : '';
   return t + b + bar;
@@ -422,14 +457,33 @@ async function send() {
   if (!loc) return openMap(true);
   const items = Object.entries(cart).map(([pid, q]) => ({ pid, q }));
   if (!items.length) return;
-  const r = await sb.from('orders').insert({ place: place.trim(), lat: loc ? loc.lat : null, lng: loc ? loc.lng : null, items });
-  if (r.error) return fail(r.error);
+  const payload = {
+    customer_id: me.id,
+    customer_name: me.name,
+    customer_phone: me.phone,
+    place: place.trim(),
+    lat: loc ? loc.lat : null,
+    lng: loc ? loc.lng : null,
+    items
+  };
+  const r = await sb.from('orders').insert(payload);
+  if (r.error) {
+    // If table doesn't accept customer_name/customer_phone explicitly, fallback to default insert
+    const r2 = await sb.from('orders').insert({ place: place.trim(), lat: loc ? loc.lat : null, lng: loc ? loc.lng : null, items });
+    if (r2.error) return fail(r2.error);
+  }
   cart = {}; place = ''; tab = 'mine'; await pull(); render();
 }
 
 function cancelMine(id) { if (!confirm('هل تريد إلغاء الطلب؟')) return; act(sb.rpc('cancel_my_order', { p_id: id })); }
-function custLabel(o) { return o.status === 'assigned' ? STATUS.accepted : STATUS[o.status]; }
-function custProg(o) { if (o.status === 'cancelled') return ''; const i = CST.indexOf(o.status === 'assigned' ? 'accepted' : o.status); return `<div class="steps">${CST.map((x, j) => `<i class="${j<=i?'d':''}"></i>`).join('')}</div>`; }
+function custLabel(o) { return CUST_STATUS[o.status] || STATUS[o.status] || o.status; }
+function custProg(o) {
+  if (o.status === 'cancelled') return '<div class="mut" style="color:var(--bad);font-weight:700;margin:6px 0">✕ تم إلغاء الطلب</div>';
+  let cur = 0;
+  if (o.status === 'delivered') cur = 2;
+  else if (['accepted', 'assigned', 'picked'].includes(o.status)) cur = 1;
+  return `<div class="steps">${[0, 1, 2].map(s => `<i class="${s <= cur ? 'd' : ''}"></i>`).join('')}</div>`;
+}
 
 function openMap(req) {
   if (typeof L === 'undefined') return alert('تعذّر تحميل الخريطة. تحقق من اتصال الإنترنت.');
@@ -468,7 +522,7 @@ function adminView() {
 ${Object.entries(grp(o)).map(([sid,l])=>`<div class="store"><b>${esc(sname(sid))}</b> <span class="mut">${l.map(i=>esc(i.name)+' × '+i.q).join('، ')}</span><br><a class="btn alt sm" target="_blank" rel="noopener" href="${wa(sphone(sid),orderText(o,sid))}">واتساب للمحل</a></div>`).join('')}
 <div class="row" style="margin-top:6px"><span>منتجات ${fm(sub(o))} + توصيل ${fm(o.fee)}</span><a class="btn alt sm" target="_blank" rel="noopener" href="${wa(o.cust,'مرحباً، بخصوص طلبك #'+o.id)}">واتساب للزبون</a></div>${o.loc?`<div style="margin-top:6px">${mp(o)}</div>`:''}
 ${o.status==='new'?`<div class="row" style="margin-top:8px;gap:8px"><button class="acc" style="flex:1" onclick="acc(${o.id})">قبول الطلب</button><button class="alt" onclick="rej(${o.id})">رفض الطلب</button></div>`:''}${['accepted','assigned'].includes(o.status)?`<select onchange="assign(${o.id},this.value)"><option value="">${o.driver?'تغيير السائق':'اختر سائقاً'}</option>${drv.map(d=>`<option value="${d.id}" ${d.id===o.driver?'selected':''}>${esc(d.name)} — ${dload(d.id)}</option>`).join('')}</select>`:''}
-${o.driver?`<div class="mut">السائق: ${esc((db.users.find(u=>u.id===o.driver)||{}).name||'')}</div>`:''}<button class="alt sm" style="color:var(--bad);border-color:var(--bad);margin-top:8px" onclick="delOrder(${o.id})">حذف الطلب</button></div>`;
+${o.driver?`<div class="mut">السائق: ${esc(dname(o.driver))}</div>`:''}<button class="alt sm" style="color:var(--bad);border-color:var(--bad);margin-top:8px" onclick="delOrder(${o.id})">حذف الطلب</button></div>`;
     const fin = o => ['delivered','cancelled'].includes(o.status), live = db.orders.filter(o => !fin(o)).reverse(), done = db.orders.filter(fin).reverse().slice(0,10);
     b += (live.map(card).join('') || '<div class="card mut">لا توجد طلبات جارية.</div>') + (done.length ? '<h2>المنتهية</h2>' + done.map(card).join('') : '');
   }
