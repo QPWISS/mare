@@ -246,6 +246,13 @@ button.acc,.btn.acc,.bar button{box-shadow:0 4px 12px rgba(255,107,0,.25)}
 button,.btn,.scard,.ctile{transition:transform .15s ease}
 button:active:not(:disabled),.btn:active,.scard:active,.ctile:active{transform:scale(.97)}
 .card{border:1px solid #F1F5F9}
+.sheetov{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:90;display:flex;align-items:flex-end;justify-content:center}
+.sheet{background:var(--bg);width:100%;max-width:480px;border-radius:24px 24px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom,0px));max-height:92vh;overflow:auto}
+.dbadge{position:absolute;top:6px;inset-inline-start:6px;background:var(--acc);color:#fff;font-weight:800;font-size:12px;padding:2px 8px;border-radius:99px;z-index:1}
+.pci{position:relative}
+.offer{background:#fff1e0;color:#7a3300;border-radius:12px;padding:10px 12px;font-weight:700;margin:6px 0}
+.mbox{border:1px dashed var(--pri);border-radius:12px;padding:10px;margin:8px 0}
+.ohead{display:flex;align-items:center;gap:10px}
 </style>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css">
 </head>
@@ -286,7 +293,7 @@ const sphone=id=>(db.stores.find(s=>s.id===id)||{}).phone||'';
 const note=t=>{db.notes.push({id:Date.now()+Math.random(),t,seen:false})};
 
 function setTab(t){tab=t;render()}
-function head(){const r={customer:'زبون',admin:'مدير',driver:'سائق'}[me.role];
+function head(){const r={customer:'زبون',admin:'مدير',driver:'سائق',owner:'مدير متجر'}[me.role];
 return `<header class="top"><div class="logo"><img class="lgm" src="${LOGO_MARK}" alt=""><div><h1>اتصل نصل</h1><div class="sub">${me.role==='customer'?'التوصيل ضمن مارع':'مارع'}</div></div></div>${me.role==='customer'?'':`<div class="who"><span>${esc(me.name)}</span><small>${r}</small><button class="alt sm" onclick="logout()">خروج</button></div>`}</header>`}
 function logout(){me=null;cart={};tab='home';render()}
 
@@ -306,7 +313,7 @@ if(mode==='reg'){const nm=$('nm').value.trim();if(!nm)return e.textContent='أد
 if(db.users.some(u=>u.phone===ph))return e.textContent='هذا الرقم مسجّل مسبقاً، يرجى تسجيل الدخول';
 me={phone:ph,name:nm,pass:pw,role:'customer'};db.users.push(me);save()}
 else{const u=db.users.find(u=>u.phone===ph&&u.pass===pw);if(!u)return e.textContent='الرقم أو كلمة السر غير صحيحة';me=u}
-tab=me.role==='admin'?'orders':me.role==='driver'?'jobs':'home';render()}
+tab=me.role==='admin'?'orders':me.role==='driver'?'jobs':me.role==='owner'?'oprod':'home';render()}
 
 /* ---------- customer ---------- */
 function find(pid){for(const s of db.stores){const p=s.products.find(p=>p.id===pid);if(p)return{s,p}}}
@@ -352,7 +359,7 @@ ${o.driver?`<div class="mut">السائق: ${esc((db.users.find(u=>u.id===o.driv
 const fin=o=>['delivered','cancelled'].includes(o.status),live=db.orders.filter(o=>!fin(o)).reverse(),done=db.orders.filter(fin).reverse().slice(0,10);
 b+=(live.map(card).join('')||'<div class="card mut">لا توجد طلبات جارية. عند وصول طلب جديد سيظهر هنا مع صوت تنبيه.</div>')+(done.length?'<h2>المنتهية</h2>'+done.map(card).join(''):'')}
 if(tab==='stores'){
-b=db.stores.map(s=>`<div class="card"><div class="row"><b>${esc(s.name)}</b><span style="display:flex;gap:6px"><button class="alt sm" onclick="editStore('${s.id}')">تعديل</button><button class="alt sm" onclick="togStore('${s.id}')">${s.man?'إغلاق':'فتح'}</button></span></div><div class="mut">${esc(s.phone||'بدون رقم')}${s.man&&!s.open?' · <span class="tag off">خارج ساعات الدوام</span>':''}</div><div class="row" style="margin:6px 0"><select style="margin:0" onchange="setStoreCat('${s.id}',this.value)">${CATS.map(c=>`<option value="${c[0]}" ${c[0]===s.cat?'selected':''}>${c[2]} ${c[1]}</option>`).join('')}</select></div>${hoursEditor(s)}<div class="row" style="margin:8px 0;gap:8px;justify-content:flex-start">${s.image_url?`<img class="pimg" src="${esc(s.image_url)}" alt="">`:''}<label class="btn alt sm">📷 ${s.image_url?'تغيير الصورة':'إضافة صورة'}<input type="file" accept="image/*" hidden onchange="setStoreImg('${s.id}',this)"></label><button class="alt sm" style="color:var(--bad);border-color:var(--bad)" onclick="delStore('${s.id}')">حذف المحل</button></div>
+b=db.stores.map(s=>`<div class="card"><div class="row"><b>${esc(s.name)}</b><span style="display:flex;gap:6px"><button class="alt sm" onclick="editStore('${s.id}')">تعديل</button><button class="alt sm" onclick="togStore('${s.id}')">${s.man?'إغلاق':'فتح'}</button></span></div><div class="mut">${esc(s.phone||'بدون رقم')}${s.man&&!s.open?' · <span class="tag off">خارج ساعات الدوام</span>':''}</div><div class="row" style="margin:6px 0"><select style="margin:0" onchange="setStoreCat('${s.id}',this.value)">${CATS.map(c=>`<option value="${c[0]}" ${c[0]===s.cat?'selected':''}>${c[2]} ${c[1]}</option>`).join('')}</select></div>${hoursEditor(s)}${mgrBox(s)}<div class="row" style="margin:8px 0;gap:8px;justify-content:flex-start">${s.image_url?`<img class="pimg" src="${esc(s.image_url)}" alt="">`:''}<label class="btn alt sm">📷 ${s.image_url?'تغيير الصورة':'إضافة صورة'}<input type="file" accept="image/*" hidden onchange="setStoreImg('${s.id}',this)"></label><button class="alt sm" style="color:var(--bad);border-color:var(--bad)" onclick="delStore('${s.id}')">حذف المحل</button></div>
 ${s.products.map(p=>`<div class="row prow" style="flex-wrap:wrap"><span>${esc(p.name)} · ${fm(p.price)}${p.stock!=null?' · 📦 '+p.stock:''}</span><span style="display:flex;gap:6px;flex-wrap:wrap"><label class="btn alt sm">📷<input type="file" accept="image/*" hidden onchange="setProdImg('${p.id}',this)"></label><button class="alt sm" onclick="editProd('${p.id}')">تعديل</button><button class="alt sm" onclick="togProd('${p.id}')">${p.on?'إخفاء':'إظهار'}</button><button class="alt sm" style="color:var(--bad);border-color:var(--bad)" onclick="delProd('${p.id}')">حذف</button></span></div>`).join('')}</div>`).join('')+
 `<h2>إضافة محل</h2><div class="card"><input id="sn" placeholder="اسم المحل"><select id="sc">${CATS.map(c=>`<option value="${c[0]}">${c[2]} ${c[1]}</option>`).join('')}</select><label class="mut">صورة أو شعار المتجر (اختياري)</label><input id="si" type="file" accept="image/*"><input id="sp" type="tel" placeholder="رقم واتساب المحل (اختياري)"><button onclick="addStore()">إضافة المحل</button></div>
 <h2>إضافة منتج</h2><div class="card"><select id="ps">${db.stores.map(s=>`<option value="${s.id}">${esc(s.name)}</option>`).join('')}</select><input id="pn" placeholder="اسم المنتج"><input id="pg" placeholder="القسم داخل المتجر (مثال: وجبات)"><label class="mut">صورة المنتج (اختياري)</label><input id="pi" type="file" accept="image/*"><input id="pk" type="number" min="0" placeholder="الكمية المتوفرة (اختياري)"><input id="pp" type="number" step="any" inputmode="decimal" placeholder="السعر بالليرة التركية ₺"><button onclick="addProd()">إضافة المنتج</button><h2 style="font-size:15px">إضافة جماعية</h2><textarea id="bulk" rows="4" placeholder="كل منتج في سطر، مثال:&#10;شاورما دجاج - 15000"></textarea><button class="alt" onclick="bulkProd()">إضافة الكل</button></div><h2>لافتة العروض</h2><div class="card"><div class="mut">لا تظهر اللافتة للزبائن إلا عندما تكتب عرضاً حقيقياً بدل العنوان الافتراضي.</div><input id="bt" value="${esc(db.banner.t)}"><input id="bs" value="${esc(db.banner.s)}"><button onclick="setBanner()">حفظ اللافتة</button></div><h2>أرقام واتساب الطلبات</h2><div class="card"><div class="mut">لكل قسم رقمه الخاص. اكتب الرقم بصيغة 09xxxxxxxx أو 905xxxxxxxxx.</div><label class="mut">💊 الصيدليات</label><input id="aw_pharmacy" type="tel" value="${esc((db.wan||{}).pharmacy||'')}"><label class="mut">🔌 الأدوات الكهربائية</label><input id="aw_electric" type="tel" value="${esc((db.wan||{}).electric||'')}"><label class="mut">📚 المكتبات والقرطاسية</label><input id="aw_offices" type="tel" value="${esc((db.wan||{}).offices||'')}"><label class="mut">💬 رقم الدعم (يظهر في صفحة حسابي)</label><input id="aw" type="tel" value="${esc(db.wa||'')}"><button onclick="setWA()">حفظ الأرقام</button></div><h2>أقسام المكتبات والقرطاسية</h2><div class="card">${(db.secs||[]).filter(x=>x.cat==='offices').map(x=>`<div class="row prow"><span>${esc(x.name)}</span><button class="alt sm" style="color:var(--bad);border-color:var(--bad)" onclick="delSec('${x.id}')">حذف</button></div>`).join('')}<input id="sn2" placeholder="اسم القسم (مثال: دفاتر)"><button onclick="addSec()">إضافة قسم</button></div>`}
@@ -383,14 +390,14 @@ function setBanner(){db.banner={t:$('bt').value.trim()||'اتصل نصل - ما�
 /* ---------- home / store / search ---------- */
 function openStore(id){sid=id;grp0=null;tab='store';render();window.scrollTo(0,0)}
 function pickCat(c){cat=c;render()}
-const prodRow=(p,open0)=>{const out=open0&&p.stock===0,open=open0&&!out;return `<div class="row prow">${p.image_url?`<img class="pimg" src="${esc(p.image_url)}" alt="">`:''}<div style="flex:1"><b>${esc(p.name)}</b><div class="mut">${fm(p.price)}</div></div>${open?`<div class="qty"><button class="alt sm" onclick="qd('${p.id}',-1)" aria-label="إنقاص">−</button><b>${cart[p.id]||0}</b><button class="sm" onclick="qd('${p.id}',1)" aria-label="زيادة">+</button></div>`:`<span class="tag off">${out?'نفد':'مغلق'}</span>`}</div>`};
-const storeCard=s=>`<button class="scard big" onclick="openStore('${s.id}')"><div class="simg${s.image_url?'':' noimg'}">${s.image_url?`<img src="${esc(s.image_url)}" alt="">`:`<span>${catI(s.cat)[2]}</span>`}<div class="sov"><b>${esc(s.name)}</b><span class="stg">${catI(s.cat)[1]}</span><div class="smeta">رسوم التوصيل: ${fm(db.fee)}</div><div class="${s.open?'son':'soff'}">${s.open?'● نشط حالياً':'● مغلق'}</div></div></div></button>`;
+const prodRow=(p,open0)=>{const out=open0&&p.stock===0,open=open0&&!out;return `<div class="row prow">${p.image_url?`<img class="pimg" src="${esc(p.image_url)}" alt="">`:''}<div style="flex:1"><b>${esc(p.name)}</b><div class="mut">${fm(p.price)}${p.old&&p.old>p.price?` <s>${fm(p.old)}</s>`:''}</div></div>${open?`<div class="qty"><button class="alt sm" onclick="qd('${p.id}',-1)" aria-label="إنقاص">−</button><b>${cart[p.id]||0}</b><button class="sm" onclick="qd('${p.id}',1)" aria-label="زيادة">+</button></div>`:`<span class="tag off">${out?'نفد':'مغلق'}</span>`}</div>`};
+const storeCard=s=>`<button class="scard big" onclick="openStore('${s.id}')"><div class="simg${s.image_url?'':' noimg'}">${s.image_url?`<img src="${esc(s.image_url)}" alt="">`:`<span>${catI(s.cat)[2]}</span>`}<div class="sov"><b>${esc(s.name)}</b><span class="stg">${catI(s.cat)[1]}</span><div class="smeta">رسوم التوصيل: ${fm(db.fee)}${s.offer?' · 🏷️ عرض':''}</div><div class="${s.open?'son':'soff'}">${s.open?'● نشط حالياً':'● مغلق'}</div></div></div></button>`;
 function homeView(){const l=db.stores.filter(s=>!cat||s.cat===cat);
 return `<div class="deliv">التوصيل ضمن <b>مارع</b></div><input readonly placeholder="🔍 ابحث عن متجر أو منتج" onclick="setTab('search')"><div class="hero"><b>${esc(db.banner.t)}</b><span>${esc(db.banner.s)}</span></div>`
 +(cat?`<div class="row"><h2>${catI(cat)[2]} ${catI(cat)[1]}</h2><button class="alt sm" onclick="pickCat(null)">عرض الكل ✕</button></div>`:`<div class="cats">${CATS.map(c=>`<button class="cat" onclick="pickCat('${c[0]}')"><span>${c[2]}</span>${c[1]}</button>`).join('')}</div><h2>المتاجر</h2>`)
 +(l.map(storeCard).join('')||'<div class="card mut">لا توجد متاجر في هذا القسم بعد.</div>')}
 function storeView(){const s=db.stores.find(x=>x.id===sid);if(!s)return homeView();
-const gs=[...new Set(s.products.filter(p=>p.on).map(p=>p.g||'المنتجات'))],g=gs.includes(grp0)?grp0:gs[0];
+const gs=sortG(s,[...new Set(s.products.filter(p=>p.on).map(p=>p.g||'المنتجات'))]),g=gs.includes(grp0)?grp0:gs[0];
 return `<div class="sthead"><button class="alt sm" onclick="tab='home';render()">→ رجوع</button>${avh(s)}<h2 style="margin:6px 0">${esc(s.name)}</h2><div class="info"><div><small>رسوم التوصيل</small><b>${fm(db.fee)}</b></div><div><small>وقت التجهيز</small><b>${esc(s.eta||'20-30 دقيقة')}</b></div><div><small>الحالة</small><b>${s.open?'مفتوح':'مغلق'}</b></div></div></div>
 <div class="gtabs">${gs.map(x=>`<button class="${x===g?'on':''}" data-g="${esc(x)}" onclick="grp0=this.dataset.g;render()">${esc(x)}</button>`).join('')}</div>`
 +(s.products.filter(p=>p.on&&(p.g||'المنتجات')===g).map(p=>prodRow(p,s.open)).join('')||'<div class="card mut">لا توجد منتجات في هذا المتجر بعد.</div>')}
@@ -412,7 +419,7 @@ ${n?`<button class="acc" style="width:100%;margin-top:8px" onclick="adv(${o.id})
 function adv(id){const o=db.orders.find(o=>o.id===id),n=NEXT[o.status];if(!n)return;o.status=n[0];note(`${me.name}: ${n[1]} (طلب #${id})`);save();render()}
 
 /* ---------- core ---------- */
-function render(){$('app').innerHTML=!me?authView():head()+({customer:custView,admin:adminPage,driver:driverView}[me.role])()}
+function render(){$('app').innerHTML=!me?authView():head()+({customer:custView,admin:adminPage,driver:driverView,owner:ownerView}[me.role])()}
 function beep(){try{const c=beep.c||(beep.c=new(window.AudioContext||window.webkitAudioContext)()),o=c.createOscillator(),g=c.createGain();o.frequency.value=880;g.gain.value=.25;o.connect(g);g.connect(c.destination);o.start();o.stop(c.currentTime+.3)}catch(e){}}
 function sync(){let r=null;try{r=localStorage.getItem(K)}catch(e){}
 if(r&&r!==last){load();me&&(me=db.users.find(u=>u.phone===me.phone)||me);const a=document.activeElement;if(!a||!/INPUT|SELECT|TEXTAREA/.test(a.tagName))render()}}
@@ -442,19 +449,20 @@ async function pull(){
   if(me.role==='admin'){q.push(sb.from('profiles').select('*').in('role',['driver','admin']));q.push(sb.from('driver_invites').select('*'))}
   const r=await Promise.all(q),bad=r.find(x=>x.error);if(bad)throw bad.error;
   const [s,p,st,o,sc,d,iv]=r;
-  const stores=s.data.map(x=>({id:x.id,name:x.name,cat:x.cat,phone:x.phone,eta:x.eta,open:x.is_open&&inHours(x.open_time,x.close_time),man:x.is_open,ot:x.open_time,ct:x.close_time,image_url:x.image_url,products:p.data.filter(y=>y.store_id===x.id).map(y=>({id:y.id,name:y.name,price:+y.price,g:y.grp,on:y.available,stock:y.stock,image_url:y.image_url}))}));
+  const [gr,mg]=await Promise.all([sb.from('store_groups').select('*').order('pos').then(x=>x.error?{data:[]}:x),(me.role==='admin'||me.role==='owner')?sb.from('store_managers').select('*').then(x=>x.error?{data:[]}:x):Promise.resolve({data:[]})]);
+  const stores=s.data.map(x=>({id:x.id,name:x.name,cat:x.cat,phone:x.phone,eta:x.eta,open:x.is_open&&inHours(x.open_time,x.close_time),man:x.is_open,offer:x.offer_text,ot:x.open_time,ct:x.close_time,image_url:x.image_url,products:p.data.filter(y=>y.store_id===x.id).map(y=>({id:y.id,name:y.name,price:+y.price,g:y.grp,on:y.available,stock:y.stock,old:y.old_price!=null?+y.old_price:null,image_url:y.image_url}))}));
   const orders=o.data.map(x=>({id:x.id,cust:x.customer_phone,cid:x.customer_id,settled:!!x.settled,custName:x.customer_name,place:x.place,loc:x.lat!=null?{lat:+x.lat,lng:+x.lng}:null,items:x.items.map(i=>({...i,price:+i.price})),fee:+x.fee,status:x.status,driver:x.driver_id,t:new Date(x.created_at).getTime()})).reverse();
   const users=d?d.data.map(u=>({id:u.id,name:u.name,phone:u.phone,role:u.role})):[];
   if(me.role==='admin')orders.forEach(x=>{const b=prev[x.id];if(b&&b!==x.status&&['picked','delivered'].includes(x.status))note((users.find(u=>u.id===x.driver)||{}).name+': '+(x.status==='picked'?'استلم الطلب':'سلّم الطلب')+' (طلب #'+x.id+')')});
   prev=Object.fromEntries(orders.map(x=>[x.id,x.status]));
   Object.keys(cart).forEach(k=>{if(!stores.some(z=>z.products.some(y=>y.id===k)))delete cart[k]});
-  const nd={fee:st.data?+st.data.fee:2000,banner:{t:(st.data&&st.data.banner_t)||'اتصل نصل - مارع',s:(st.data&&st.data.banner_s)||''},stores,orders,users,invites:iv?iv.data:[],secs:sc.data,wa:(st.data&&st.data.admin_whatsapp)||'',wan:(st.data&&st.data.wa_numbers)||{},notes:db.notes};
+  const nd={fee:st.data?+st.data.fee:2000,banner:{t:(st.data&&st.data.banner_t)||'اتصل نصل - مارع',s:(st.data&&st.data.banner_s)||''},stores,orders,users,invites:iv?iv.data:[],secs:sc.data,grps:gr.data,mgrs:mg.data,wa:(st.data&&st.data.admin_whatsapp)||'',wan:(st.data&&st.data.wa_numbers)||{},notes:db.notes};
   const sig=JSON.stringify(nd);
   if(sig!==last){db=nd;const a=document.activeElement;if(!(a&&/INPUT|SELECT|TEXTAREA/.test(a.tagName))){last=sig;render()}}
  }catch(e){console.error(e)}
 }
 async function enter(u){const r=await sb.from('profiles').select('*').eq('id',u.id).single();if(r.error)throw r.error;
- me={id:r.data.id,phone:r.data.phone,name:r.data.name,role:r.data.role};tab=me.role==='admin'?'orders':me.role==='driver'?'jobs':'home';last='';loc=(r.data.lat!=null&&r.data.lng!=null)?{lat:+r.data.lat,lng:+r.data.lng}:null;await pull();render();if(me.role==='customer'&&!loc)openMap(true)}
+ me={id:r.data.id,phone:r.data.phone,name:r.data.name,role:r.data.role};tab=me.role==='admin'?'orders':me.role==='driver'?'jobs':me.role==='owner'?'oprod':'home';last='';loc=(r.data.lat!=null&&r.data.lng!=null)?{lat:+r.data.lat,lng:+r.data.lng}:null;await pull();render();if(me.role==='customer'&&!loc)openMap(true)}
 async function auth(){
  const e=$('err'),ph=nph($('ph').value),pw=$('pw').value;
  if(!/^\d{9,15}$/.test(ph))return e.textContent='أدخل رقم واتساب صحيحاً';
@@ -508,7 +516,7 @@ function homeView(){
  if(cat){const l=db.stores.filter(s=>s.cat===cat);return `<div class="pghead"><button class="alt sm" onclick="back()">→</button><b>${catI(cat)[2]} ${catI(cat)[1]}</b><span class="mut">${l.length} متجر</span></div>`+(l.map(storeCard).join('')||'<div class="card mut">لا توجد متاجر في هذا القسم بعد.</div>')}
  return `<div class="deliv">التوصيل ضمن <b>مارع</b></div><input readonly placeholder="🔍 ابحث عن متجر أو منتج" onclick="setTab('search')"><div class="hero"><b>${esc(db.banner.t)}</b><span>${esc(db.banner.s)}</span></div><div class="cats">${CATS.map(c=>`<button class="cat" onclick="pickCat('${c[0]}')"><span>${c[2]}</span>${c[1]}</button>`).join('')}</div><h2>المتاجر</h2>`+(db.stores.map(storeCard).join('')||'<div class="card mut">لا توجد متاجر بعد.</div>')}
 function storeView(){const s=db.stores.find(x=>x.id===sid);if(!s)return homeView();
- const gs=[...new Set(s.products.filter(p=>p.on).map(p=>p.g||'المنتجات'))],g=gs.includes(grp0)?grp0:gs[0];
+ const gs=sortG(s,[...new Set(s.products.filter(p=>p.on).map(p=>p.g||'المنتجات'))]),g=gs.includes(grp0)?grp0:gs[0];
  return `<div class="pghead"><button class="alt sm" onclick="back()">→</button><b>${esc(s.name)}</b><span class="tag ${s.open?'ok':'off'}">${s.open?'مفتوح':'مغلق'}</span></div>
 <div class="cover${s.image_url?'':' noimg'}">${s.image_url?`<img src="${esc(s.image_url)}" alt="">`:`<span>${catI(s.cat)[2]}</span>`}</div>
 <div class="info two"><div><small>رسوم التوصيل</small><b>${fm(db.fee)}</b></div><div><small>القسم</small><b>${catI(s.cat)[1]}</b></div></div>
@@ -536,18 +544,18 @@ function waNum(c){return (db.wan&&db.wan[c])||db.wa}
 function waLink(m,c){const l=loc?`\n\nموقعي: https://www.google.com/maps?q=${loc.lat},${loc.lng}`:'';return wa(waNum(c),`مرحباً، أنا ${me.name}، ${m}${l}`)}
 const CATC={supermarket:'#d4e6fb',veg:'#cdeed2',pharmacy:'#f8c8cb',meat:'#f7c3c3',electric:'#e0cdf5',food:'#fdd8b6',offices:'#cfc7f0',gas:'#fbc6ac',sweets:'#fdf0b4'};
 let stab='prod',sq2='';
-function pcard(p,open,emo){const q=cart[p.id]||0,out=open&&p.stock===0;if(out)open=false;return `<div class="pc"><div class="pci">${p.image_url?`<img src="${esc(p.image_url)}" alt="">`:`<span>${emo}</span>`}</div><b>${esc(p.name)}</b><div class="pp">${fm(p.price)}</div>${open?(q?`<div class="qty" style="justify-content:center"><button class="alt sm" onclick="qd('${p.id}',-1)" aria-label="إنقاص">−</button><b>${q}</b><button class="sm" onclick="qd('${p.id}',1)" aria-label="زيادة">+</button></div>`:`<button class="sm addb" onclick="qd('${p.id}',1)">أضف +</button>`):`<span class="tag off">${out?'نفد':'مغلق'}</span>`}${p.stock!=null&&p.stock>0&&p.stock<=5?`<div class="mut" style="font-size:12px">متبقي ${p.stock}</div>`:''}</div>`}
-function plistHTML(){const s=db.stores.find(x=>x.id===sid);if(!s)return '';const e=catI(s.cat)[2],gs=[...new Set(s.products.filter(p=>p.on).map(p=>p.g||'المنتجات'))],g=gs.includes(grp0)?grp0:'الكل',t=sq2.trim();
+function pcard(p,open,emo){const q=cart[p.id]||0,out=open&&p.stock===0;if(out)open=false;return `<div class="pc"><div class="pci">${disc(p)}${p.image_url?`<img src="${esc(p.image_url)}" alt="">`:`<span>${emo}</span>`}</div><b>${esc(p.name)}</b><div class="pp">${fm(p.price)}${p.old&&p.old>p.price?` <s class="mut" style="font-weight:400;font-size:12px">${fm(p.old)}</s>`:''}</div>${open?(q?`<div class="qty" style="justify-content:center"><button class="alt sm" onclick="qd('${p.id}',-1)" aria-label="إنقاص">−</button><b>${q}</b><button class="sm" onclick="qd('${p.id}',1)" aria-label="زيادة">+</button></div>`:`<button class="sm addb" onclick="qd('${p.id}',1)">أضف +</button>`):`<span class="tag off">${out?'نفد':'مغلق'}</span>`}${p.stock!=null&&p.stock>0&&p.stock<=5?`<div class="mut" style="font-size:12px">متبقي ${p.stock}</div>`:''}</div>`}
+function plistHTML(){const s=db.stores.find(x=>x.id===sid);if(!s)return '';const e=catI(s.cat)[2],gs=sortG(s,[...new Set(s.products.filter(p=>p.on).map(p=>p.g||'المنتجات'))]),g=gs.includes(grp0)?grp0:'الكل',t=sq2.trim();
  const l=s.products.filter(p=>p.on&&(g==='الكل'||(p.g||'المنتجات')===g)&&(!t||p.name.includes(t)));
  return l.length?`<div class="pgrid">${l.map(p=>pcard(p,s.open,e)).join('')}</div>`:'<div class="card mut" style="margin-top:10px">لا توجد منتجات.</div>'}
 function storeView(){const s=db.stores.find(x=>x.id===sid);if(!s)return homeView();
  let body;
  if(stab==='info')body=`<div class="card"><div class="row"><span>القسم</span><b>${catI(s.cat)[1]}</b></div><div class="row prow"><span>رسوم التوصيل</span><b>${fm(db.fee)}</b></div><div class="row prow"><span>الحالة</span><b>${s.open?'مفتوح':'مغلق'}</b></div>${hoursRow(s)}</div>`;
- else{const gs=[...new Set(s.products.filter(p=>p.on).map(p=>p.g||'المنتجات'))],g=gs.includes(grp0)?grp0:'الكل';
+ else{const gs=sortG(s,[...new Set(s.products.filter(p=>p.on).map(p=>p.g||'المنتجات'))]),g=gs.includes(grp0)?grp0:'الكل';
   body=`<input id="sq2" value="${esc(sq2)}" oninput="sq2=this.value;$('plist').innerHTML=plistHTML()" placeholder="🔍 ابحث في منتجات المتجر"><div class="gtabs">${['الكل',...gs].map(x=>`<button class="${x===g?'on':''}" data-g="${esc(x)}" onclick="grp0=this.dataset.g;render()">${esc(x)}</button>`).join('')}</div><div id="plist">${plistHTML()}</div>`}
  return `<div class="pghead"><button class="alt sm" onclick="back()">→</button><b>${esc(s.name)}</b><span class="tag ${s.open?'ok':'off'}">${s.open?'مفتوح':'مغلق'}</span></div>
 <div class="cover${s.image_url?'':' noimg'}">${s.image_url?`<img src="${esc(s.image_url)}" alt="">`:`<span>${catI(s.cat)[2]}</span>`}</div>
-<div class="tabs2"><button class="${stab==='prod'?'on':''}" onclick="stab='prod';render()">المنتجات</button><button class="${stab==='info'?'on':''}" onclick="stab='info';render()">معلومات المتجر</button></div>`+body}
+${s.offer?`<div class="offer">🏷️ ${esc(s.offer)}</div>`:''}<div class="tabs2"><button class="${stab==='prod'?'on':''}" onclick="stab='prod';render()">المنتجات</button><button class="${stab==='info'?'on':''}" onclick="stab='info';render()">معلومات المتجر</button></div>`+body}
 function acctView(){return `<div class="card"><div class="row" style="justify-content:flex-start;gap:12px"><span class="av big">👤</span><div><b style="font-size:18px">${esc(me.name)}</b><div class="mut">${esc(me.phone)}</div></div></div></div>
 <div class="card"><div class="row"><b>📍 موقع التوصيل</b>${loc?'<span class="tag ok">محدد</span>':'<span class="tag">غير محدد</span>'}</div><button class="alt" style="width:100%;margin-top:8px" onclick="openMap(false)">${loc?'تعديل الموقع على الخريطة':'حدد موقعك'}</button></div>
 ${db.wa?`<a class="btn alt big" style="display:block;text-align:center;margin:10px 0" target="_blank" rel="noopener" href="${wa(db.wa,'مرحباً، أحتاج مساعدة')}">💬 تواصل مع الدعم</a>`:''}
@@ -630,7 +638,7 @@ function dropSession(){me=null;cart={};loc=null;closeMap();tab='home';last='';re
 async function sameUser(){const r=await sb.auth.getSession();if(r.data.session&&r.data.session.user.id===me.id)return true;dropSession();return false}
 sb.auth.onAuthStateChange(()=>{setTimeout(async()=>{if(!me)return;const r=await sb.auth.getSession();if(!r.data.session||r.data.session.user.id!==me.id)dropSession()},0)});
 function head(){
- const r={customer:'زبون',admin:'مدير',driver:'سائق'}[me.role];
+ const r={customer:'زبون',admin:'مدير',driver:'سائق',owner:'مدير متجر'}[me.role];
  const logo=`<div class="logo"><img class="lgm" src="${LOGO_MARK}" alt=""><div><h1>اتصل نصل</h1><div class="sub">${me.role==='customer'?'التوصيل ضمن مارع':'مارع'}</div></div></div>`;
  if(me.role==='customer'){
   const T={cart:'سلّتي',mine:'طلباتي',acct:'حسابي'}[tab];
@@ -655,6 +663,74 @@ function hoursEditor(s){const t=v=>v?String(v).slice(0,5):'';return `<div class=
 function setHours(id){const o=$('ot_'+id).value,c=$('ct_'+id).value;if((o&&!c)||(!o&&c))return alert('حدد وقت البداية ووقت النهاية معاً، أو اتركهما فارغين لإلغاء الدوام المحدد.');act(sb.from('stores').update({open_time:o||null,close_time:c||null}).eq('id',id))}
 function setStoreCat(id,c){act(sb.from('stores').update({cat:c}).eq('id',id))}
 async function setProdImg(id,inp){const f=inp.files[0];if(!f)return;try{const u=await upImg(f);act(sb.from('products').update({image_url:u}).eq('id',id))}catch(e){fail(e)}}
+const MGRL={food:'مدير المطعم',supermarket:'مسؤول الماركت',veg:'مسؤول المحل',meat:'مسؤول الملحمة',sweets:'مسؤول المحل',gas:'مسؤول المركز',offices:'مسؤول المكتبة',pharmacy:'مسؤول الصيدلية',electric:'مسؤول المحل'};
+function sortG(s,arr){const pos={};(db.grps||[]).filter(g=>g.store_id===s.id).forEach(g=>{pos[g.name]=g.pos});return arr.slice().sort((a,b)=>(pos[a]??999)-(pos[b]??999))}
+function disc(p){return p.old&&p.old>p.price?`<div class="dbadge">-${Math.round((1-p.price/p.old)*100)}%</div>`:''}
+function mgrBox(s){const l=(db.mgrs||[]).filter(m=>m.store_id===s.id),lb=MGRL[s.cat]||'مسؤول المتجر';
+ return `<div class="mbox"><b>👤 ${lb}</b>${l.map(m=>`<div class="row prow"><span>${esc(m.name||'بدون اسم')} · ${esc(m.phone)}</span><button class="alt sm" style="color:var(--bad);border-color:var(--bad)" onclick="delMgr('${s.id}','${esc(m.phone)}')">إزالة</button></div>`).join('')}<div class="row" style="gap:6px;margin-top:6px"><input id="mn_${s.id}" placeholder="الاسم" style="margin:0"><input id="mp_${s.id}" type="tel" placeholder="رقم واتساب" style="margin:0"></div><button class="alt sm" style="margin-top:6px" onclick="addMgr('${s.id}')">➕ إضافة ${lb}</button><div class="mut" style="font-size:12px;margin-top:4px">يمكن إضافة المالك والمساعد. يسجّل كل منهما حساباً برقمه ثم يظهر له متجره.</div></div>`}
+async function addMgr(id){const p=nph($('mp_'+id).value),n=$('mn_'+id).value.trim();if(!/^\d{9,15}$/.test(p))return alert('أدخل رقماً صحيحاً');await act(sb.rpc('add_store_manager',{p_store:id,p_phone:p,p_name:n}))}
+function delMgr(id,ph){if(confirm('إزالة هذا المسؤول من المتجر؟'))act(sb.rpc('remove_store_manager',{p_store:id,p_phone:ph}))}
+/* ---------- store manager ---------- */
+let ocur=null,ogs='الكل',pfid=null,pfp=null,pfd=0;
+function myStores(){return db.stores.filter(s=>(db.mgrs||[]).some(m=>m.store_id===s.id&&m.phone===me.phone))}
+function curStore(){const l=myStores();return l.find(s=>s.id===ocur)||l[0]}
+function ogroups(s){const names=sortG(s,[...new Set([...(db.grps||[]).filter(g=>g.store_id===s.id).map(g=>g.name),...s.products.map(p=>p.g||'المنتجات')])]);return names.map(n=>({name:n,count:s.products.filter(p=>(p.g||'المنتجات')===n).length}))}
+function sheet(h){closeSheet();const d=document.createElement('div');d.id='sheetov';d.className='sheetov';d.innerHTML=`<div class="sheet">${h}</div>`;d.addEventListener('click',e=>{if(e.target===d)closeSheet()});document.body.appendChild(d)}
+function closeSheet(){const d=document.getElementById('sheetov');if(d)d.remove()}
+function ownerView(){
+ const l=myStores(),s=curStore(),T=['oprod','ogrp','ooff','oset'].includes(tab)?tab:'oprod',
+  nb=(t,i,n)=>`<button class="${T===t?'on':''}" onclick="setTab('${t}')">${i}<small>${n}</small></button>`,
+  nav=`<div class="nav">${nb('oprod','🍽️','المنتجات')}${nb('ogrp','📂','الأقسام')}${nb('ooff','🏷️','العروض')}${nb('oset','⚙️','الإعدادات')}</div>`;
+ if(!s)return `<div class="empty"><span>⏳</span><b>لا يوجد متجر مرتبط بحسابك</b><div class="mut">تواصل مع الإدارة لربط حسابك بمتجرك</div></div>`+nav;
+ const sw=l.length>1?`<select onchange="ocur=this.value;render()">${l.map(x=>`<option value="${x.id}" ${x.id===s.id?'selected':''}>${esc(x.name)}</option>`).join('')}</select>`:'';
+ const top=`${sw}<div class="card ohead"><div style="flex:1"><b style="font-size:18px">${esc(s.name)}</b><div class="mut">${catI(s.cat)[2]} ${catI(s.cat)[1]}${s.man&&!s.open?' · خارج ساعات الدوام':''}</div></div><button class="${s.man?'':'alt'}" onclick="togStore('${s.id}')">${s.man?'🟢 مفتوح':'⚪ مغلق'}</button></div>`;
+ return top+({oprod:oProd,ogrp:oGrp,ooff:oOff,oset:oSet}[T])(s)+nav}
+function oProd(s){const gs=ogroups(s).map(x=>x.name),g=gs.includes(ogs)?ogs:'الكل',l=s.products.filter(p=>g==='الكل'||(p.g||'المنتجات')===g);
+ return `<div class="row" style="gap:8px"><button class="acc" style="flex:1" onclick="openPF()">➕ منتج جديد</button><button class="alt" onclick="openPaste()">📋 لصق قائمة</button><button class="alt" onclick="pctAll()">٪ الأسعار</button></div><div class="gtabs" style="position:static">${['الكل',...gs].map(x=>`<button class="${x===g?'on':''}" data-g="${esc(x)}" onclick="ogs=this.dataset.g;render()">${esc(x)}</button>`).join('')}</div>`
+ +(l.map(p=>`<div class="card row" style="gap:10px;${p.on?'':'opacity:.55'}">${p.image_url?`<img class="pimg" src="${esc(p.image_url)}" alt="">`:`<span class="av big">${catI(s.cat)[2]}</span>`}<div style="flex:1;min-width:0"><b>${esc(p.name)}</b><div>${fm(p.price)}${p.old?` <s class="mut">${fm(p.old)}</s>`:''}</div><div class="mut" style="font-size:12px">${esc(p.g||'المنتجات')}${p.stock!=null?' · 📦 '+p.stock:''}${p.on?'':' · مخفي'}</div></div><div style="display:flex;flex-direction:column;gap:6px"><button class="alt sm" onclick="openPF('${p.id}')">✏️</button><button class="alt sm" onclick="togProd('${p.id}')">${p.on?'👁':'🚫'}</button></div></div>`).join('')||'<div class="empty"><span>🍽️</span><b>لا توجد منتجات</b><div class="mut">اضغط «منتج جديد» للبدء</div></div>')}
+function openPF(id){const s=curStore(),p=id?find(id).p:null,gs=ogroups(s).map(x=>x.name);pfid=id||null;pfp=p;pfd=p&&p.old?Math.round((1-p.price/p.old)*100):0;
+ sheet(`<h2 style="margin-top:0">${p?'تعديل المنتج':'منتج جديد'}</h2><input id="pf_name" placeholder="اسم المنتج" value="${p?esc(p.name):''}"><div class="row" style="gap:8px"><input id="pf_price" type="number" step="any" inputmode="decimal" placeholder="السعر ₺" value="${p?(p.old||p.price):''}"><input id="pf_disc" type="number" inputmode="numeric" placeholder="خصم % (اختياري)" value="${pfd||''}"></div><select id="pf_grp" onchange="$('pf_newg').style.display=this.value==='__new'?'block':'none'">${(gs.length?gs:['المنتجات']).map(g=>`<option value="${esc(g)}" ${p&&(p.g||'المنتجات')===g?'selected':''}>${esc(g)}</option>`).join('')}<option value="__new">➕ قسم جديد...</option></select><input id="pf_newg" placeholder="اسم القسم الجديد" style="display:none"><input id="pf_stock" type="number" min="0" inputmode="numeric" placeholder="الكمية المتوفرة (اختياري)" value="${p&&p.stock!=null?p.stock:''}"><label class="mut">صورة المنتج (اختيارية)</label><input id="pf_img" type="file" accept="image/*"><div class="row" style="gap:8px;margin-top:8px"><button class="acc big" style="flex:1" onclick="savePF()">حفظ</button><button class="alt big" onclick="closeSheet()">إلغاء</button></div>${p?`<button class="alt" style="width:100%;margin-top:8px;color:var(--bad);border-color:var(--bad)" onclick="delPF('${p.id}')">🗑 حذف المنتج</button>`:''}`)}
+async function savePF(){const n=$('pf_name').value.trim(),pr=$('pf_price').value,d=Math.min(95,Math.max(0,+$('pf_disc').value||0)),o=+pr;
+ if(!n||pr===''||!(o>=0))return alert('أدخل اسم المنتج وسعره');
+ let price=d>0?Math.round(o*(1-d/100)*100)/100:o,old=d>0?o:null;
+ if(pfp&&o===(pfp.old||pfp.price)&&d===pfd){price=pfp.price;old=pfp.old||null}
+ let g=$('pf_grp').value;if(g==='__new')g=($('pf_newg').value||'').trim()||'المنتجات';
+ const s=curStore(),f=$('pf_img').files[0];let u=null;if(f){try{u=await upImg(f)}catch(e){return fail(e)}}
+ const row={name:n,price,old_price:old,grp:g,stock:$('pf_stock').value===''?null:Math.max(0,parseInt($('pf_stock').value)||0)};if(u)row.image_url=u;
+ const r=pfid?await sb.from('products').update(row).eq('id',pfid):await sb.from('products').insert({...row,store_id:s.id});
+ if(r.error)return fail(r.error);
+ const names=ogroups(s).map(x=>x.name);if(!names.includes(g)){names.push(g);await sb.from('store_groups').upsert(names.map((nm,i)=>({store_id:s.id,name:nm,pos:i})),{onConflict:'store_id,name'})}
+ closeSheet();await pull();render()}
+async function delPF(id){if(!confirm('حذف هذا المنتج نهائياً؟'))return;const r=await sb.from('products').delete().eq('id',id);if(r.error)return fail(r.error);closeSheet();await pull();render()}
+function openPaste(){const s=curStore(),gs=ogroups(s).map(x=>x.name);sheet(`<h2 style="margin-top:0">لصق قائمة أسعار</h2><p class="mut">كل منتج في سطر بالشكل: الاسم - السعر. المنتج الموجود بنفس الاسم يتحدّث سعره، والجديد يُضاف.</p><textarea id="pst" rows="7" placeholder="شاورما دجاج - 150&#10;فروج مشوي - 700"></textarea><select id="pst_g">${(gs.length?gs:['المنتجات']).map(g=>`<option value="${esc(g)}">${esc(g)}</option>`).join('')}</select><div class="row" style="gap:8px"><button class="acc big" style="flex:1" onclick="doPaste()">تنفيذ</button><button class="alt big" onclick="closeSheet()">إلغاء</button></div>`)}
+async function doPaste(){const s=curStore(),g=$('pst_g').value,rows=$('pst').value.split('\n').map(l=>l.match(/^(.+?)\s*[-–:،,]\s*([\d.]+)\s*$/)).filter(Boolean).map(m=>({name:m[1].trim(),price:+m[2]}));
+ if(!rows.length)return alert('اكتب كل منتج في سطر بالشكل: الاسم - السعر');
+ const ex={};s.products.forEach(p=>{ex[p.name.trim()]=p});const ups=[],ins=[];
+ rows.forEach(r=>{const p=ex[r.name];if(p)ups.push(sb.from('products').update({price:r.price,old_price:null}).eq('id',p.id));else ins.push({store_id:s.id,name:r.name,price:r.price,grp:g})});
+ const res=await Promise.all(ups);if(ins.length)res.push(await sb.from('products').insert(ins));
+ const bad=res.find(x=>x.error);if(bad)return fail(bad.error);closeSheet();alert('تم: '+ups.length+' تحديث، '+ins.length+' إضافة');await pull();render()}
+function pctAll(){const s=curStore(),v=prompt('اكتب نسبة التغيير على كل الأسعار (مثال: 5 للزيادة، -10 للتخفيض)');if(v===null||v===''||isNaN(+v))return;const k=1+(+v)/100;if(k<=0||!confirm('تغيير كل أسعار «'+s.name+'» بنسبة '+v+'%؟'))return;
+ Promise.all(s.products.map(p=>sb.from('products').update({price:Math.round(p.price*k*100)/100,old_price:p.old?Math.round(p.old*k*100)/100:null}).eq('id',p.id))).then(async()=>{await pull();render()})}
+function oGrp(s){const gs=ogroups(s);
+ return `<h2>الأقسام</h2><p class="mut">الأقسام تنظّم منتجاتك أمام الزبون (مثل: وجبات، ساندويش، فروج، مناسف).</p>`+(gs.map((g,i)=>`<div class="card row"><div><b>${esc(g.name)}</b><div class="mut" style="font-size:12px">${g.count} منتج</div></div><span style="display:flex;gap:6px"><button class="alt sm" onclick="moveG(${i},-1)" ${i===0?'disabled':''}>↑</button><button class="alt sm" onclick="moveG(${i},1)" ${i===gs.length-1?'disabled':''}>↓</button><button class="alt sm" onclick="renG(${i})">✏️</button><button class="alt sm" style="color:var(--bad);border-color:var(--bad)" onclick="delG(${i})">🗑</button></span></div>`).join('')||'<div class="empty"><span>📂</span><b>لا توجد أقسام بعد</b></div>')+`<div class="card"><input id="ng" placeholder="اسم القسم الجديد"><button class="acc" style="width:100%" onclick="addG()">➕ إضافة قسم</button></div>`}
+async function saveOrder(s,names){const u=[...new Set(names)],r=await sb.from('store_groups').upsert(u.map((n,i)=>({store_id:s.id,name:n,pos:i})),{onConflict:'store_id,name'});if(r.error)return fail(r.error);await pull();render()}
+function moveG(i,d){const s=curStore(),names=ogroups(s).map(x=>x.name),j=i+d;if(j<0||j>=names.length)return;[names[i],names[j]]=[names[j],names[i]];saveOrder(s,names)}
+function addG(){const s=curStore(),n=$('ng').value.trim();if(!n)return;const names=ogroups(s).map(x=>x.name);if(names.includes(n))return alert('هذا القسم موجود');names.push(n);saveOrder(s,names)}
+async function renG(i){const s=curStore(),gs=ogroups(s).map(x=>x.name),n=gs[i],v=prompt('الاسم الجديد للقسم',n);if(!v||!v.trim()||v.trim()===n)return;const nn=v.trim();
+ const r=await sb.from('products').update({grp:nn}).eq('store_id',s.id).eq('grp',n);if(r.error)return fail(r.error);
+ await sb.from('store_groups').delete().eq('store_id',s.id).eq('name',n);gs[i]=nn;saveOrder(s,gs)}
+async function delG(i){const s=curStore(),n=ogroups(s)[i].name,c=s.products.filter(p=>(p.g||'المنتجات')===n).length;
+ if(!confirm(c?'سيُنقل منتجات هذا القسم ('+c+') إلى قسم «المنتجات». متابعة؟':'حذف القسم؟'))return;
+ if(c){const r=await sb.from('products').update({grp:'المنتجات'}).eq('store_id',s.id).eq('grp',n);if(r.error)return fail(r.error)}
+ const r2=await sb.from('store_groups').delete().eq('store_id',s.id).eq('name',n);if(r2.error)return fail(r2.error);await pull();render()}
+function oOff(s){const al=s.products.filter(p=>p.old&&p.old>p.price);
+ return `<h2>رسالة عرض للمتجر</h2><div class="card"><div class="mut">تظهر أعلى صفحة متجرك للزبائن.</div><input id="of_t" value="${esc(s.offer||'')}" placeholder="مثال: توصيل مجاني على كل الوجبات اليوم"><button class="acc" style="width:100%" onclick="saveOffer()">حفظ الرسالة</button></div><h2>خصم على منتج</h2><div class="card"><select id="dp_sel">${s.products.map(p=>`<option value="${p.id}">${esc(p.name)} — ${fm(p.old||p.price)}</option>`).join('')}</select><input id="dp_pct" type="number" inputmode="numeric" placeholder="نسبة الخصم %"><button class="acc" style="width:100%" onclick="applyDisc()">تطبيق الخصم</button></div><h2>الخصومات الحالية</h2>`
+ +(al.map(p=>`<div class="card row"><div><b>${esc(p.name)}</b><div>${fm(p.price)} <s class="mut">${fm(p.old)}</s> <span class="tag">-${Math.round((1-p.price/p.old)*100)}%</span></div></div><button class="alt sm" onclick="removeDisc('${p.id}')">إلغاء</button></div>`).join('')||'<div class="card mut">لا توجد خصومات.</div>')+(al.length?`<button class="alt" style="width:100%" onclick="clearDiscs()">إلغاء كل الخصومات</button>`:'')}
+function saveOffer(){const s=curStore();act(sb.from('stores').update({offer_text:$('of_t').value.trim()||null}).eq('id',s.id))}
+function applyDisc(){const id=$('dp_sel').value,d=Math.min(95,Math.max(0,+$('dp_pct').value||0));if(!id||d<1)return alert('اختر المنتج وأدخل نسبة الخصم');const p=find(id).p,orig=p.old||p.price;act(sb.from('products').update({price:Math.round(orig*(1-d/100)*100)/100,old_price:orig}).eq('id',id))}
+function removeDisc(id){const p=find(id).p;act(sb.from('products').update({price:p.old,old_price:null}).eq('id',id))}
+function clearDiscs(){const s=curStore(),l=s.products.filter(p=>p.old);if(!l.length||!confirm('إلغاء كل الخصومات؟'))return;Promise.all(l.map(p=>sb.from('products').update({price:p.old,old_price:null}).eq('id',p.id))).then(async()=>{await pull();render()})}
+function oSet(s){return `<h2>صورة المتجر</h2><div class="card">${s.image_url?`<img src="${esc(s.image_url)}" alt="" style="width:100%;border-radius:12px;margin-bottom:8px">`:''}<label class="btn alt" style="display:block;text-align:center">📷 ${s.image_url?'تغيير الصورة':'إضافة صورة'}<input type="file" accept="image/*" hidden onchange="setStoreImg('${s.id}',this)"></label></div><h2>ساعات الدوام</h2><div class="card"><div class="mut">يفتح المتجر ويغلق تلقائياً في هذه الساعات. اتركها فارغة للتحكم اليدوي فقط.</div>${hoursEditor(s)}</div>`}
 (async()=>{render();
  try{const r=await sb.auth.getSession();if(r.data.session)await enter(r.data.session.user)}catch(e){console.error(e)}
  setInterval(pull,5000);
