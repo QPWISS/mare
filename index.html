@@ -314,6 +314,20 @@ button.acc,.btn.acc,.bar button{background:var(--acc);color:#002244;box-shadow:0
 .splash{min-height:100vh;display:grid;place-content:center;gap:12px;text-align:center;color:#003366;font-size:18px}
 .spin{width:38px;height:38px;border:4px solid #dcecff;border-top-color:#3399FF;border-radius:50%;margin:0 auto;animation:sp 1s linear infinite}
 @keyframes sp{to{transform:rotate(360deg)}}
+#app.pg>*{animation:fi .2s ease}
+@keyframes fi{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.ctile.hasimg{background-size:cover;background-position:center;position:relative;overflow:hidden;padding:0;justify-content:flex-end;min-height:104px}
+.ctile.hasimg .lbl{position:absolute;inset:auto 0 0 0;padding:20px 6px 8px;background:linear-gradient(transparent,rgba(0,0,0,.7));color:#fff;font-size:13px;font-weight:800}
+.catcover{height:130px;border-radius:18px;background-size:cover;background-position:center;position:relative;overflow:hidden;margin:4px 0 10px}
+.catcover b{position:absolute;inset:auto 0 0 0;padding:26px 14px 10px;background:linear-gradient(transparent,rgba(0,0,0,.7));color:#fff;font-size:20px}
+.nav button{position:relative}
+.bdg{position:absolute;top:2px;inset-inline-end:16%;background:#c0392b;color:#fff;border-radius:99px;font-size:11px;font-style:normal;padding:0 6px;font-weight:800}
+.oc-act{display:flex;gap:8px;margin-top:8px}
+.oc-act>button{flex:1}
+.oc-sec{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.srow{display:flex;gap:10px;align-items:center}
+.tabs2.scroll{overflow-x:auto;white-space:nowrap;display:flex}
+.tabs2.scroll button{flex:0 0 auto}
 </style>
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;800&display=swap" rel="stylesheet">
 </head>
@@ -379,7 +393,7 @@ if(mode==='reg'){const nm=$('nm').value.trim();if(!nm)return e.textContent='أد
 if(db.users.some(u=>u.phone===ph))return e.textContent='هذا الرقم مسجّل مسبقاً، يرجى تسجيل الدخول';
 me={phone:ph,name:nm,pass:pw,role:'customer'};db.users.push(me);save()}
 else{const u=db.users.find(u=>u.phone===ph&&u.pass===pw);if(!u)return e.textContent='الرقم أو كلمة السر غير صحيحة';me=u}
-tab=me.role==='admin'?'orders':me.role==='driver'?'jobs':me.role==='owner'?'oprod':'home';render()}
+tab=me.role==='admin'?'orders':me.role==='driver'?'jobs':me.role==='owner'?'oord':'home';render()}
 
 /* ---------- customer ---------- */
 function find(pid){for(const s of db.stores){const p=s.products.find(p=>p.id===pid);if(p)return{s,p}}}
@@ -396,10 +410,10 @@ if(!cartCount())b=`<div class="empty"><span>🛒</span><b>سلّتك فارغة<
 else{const by={};Object.entries(cart).forEach(([id,q])=>{const f=find(id);if(f)(by[f.s.id]=by[f.s.id]||[]).push([f.p,q])});
 b=`<h2 style="margin-top:6px">سلّتي</h2>`+Object.entries(by).map(([sid,l])=>`<div class="card"><div class="row"><b>${esc(sname(sid))}</b><span class="stg2">${catI((db.stores.find(x=>x.id===sid)||{}).cat)[1]}</span></div>${l.map(([p,q])=>`<div class="row prow">${p.image_url?`<img loading="lazy" decoding="async" class="pimg" src="${esc(p.image_url)}" alt="">`:''}<div style="flex:1"><div>${esc(p.name)}</div><div class="mut">${fm(p.price)}</div></div><div class="qty"><button class="alt sm" onclick="qd('${p.id}',-1)" aria-label="إنقاص">−</button><b>${q}</b><button class="sm" onclick="qd('${p.id}',1)" aria-label="زيادة">+</button></div></div>`).join('')}</div>`).join('')
 +`<div class="card"><div class="row"><b>📍 موقع التوصيل</b>${loc?'<span class="tag ok">محدد</span>':'<span class="tag">غير محدد</span>'}</div><button class="alt" style="width:100%;margin:8px 0" onclick="openMap(false)">${loc?'🔄 تحديث موقعي الحالي (GPS)':'📍 حدد موقعي الحالي'}</button><input id="place" value="${esc(place)}" oninput="place=this.value" placeholder="وصف إضافي للمكان (اختياري)"></div>`
-+`${payChooser()}${couponBox()}<div class="card sumc"><div class="row"><span>المجموع الفرعي</span><span>${fm(cartSum())}</span></div><div class="row"><span>رسوم التوصيل</span><span>${fm(db.fee)}</span></div>${cDisc()>0?`<div class="row" style="color:#14612f"><span>خصم (${esc(cpn.code)})</span><span>-${fm(cDisc())}</span></div>`:''}<div class="row tot"><b>المجموع الكلي</b><b>${fm(cartSum()+db.fee-cDisc())}</b></div></div>`
++`${payChooser()}<div class="card sumc"><div class="row"><span>المجموع الفرعي</span><span>${fm(cartSum())}</span></div><div class="row"><span>رسوم التوصيل</span><span>${fm(db.fee)}</span></div><div class="row tot"><b>المجموع الكلي</b><b>${fm(cartSum()+db.fee)}</b></div></div>`
 +`<button class="acc big" style="width:100%" onclick="send()" ${loc?'':'disabled'}>إتمام الطلب</button>${loc?'':'<div class="mut" style="text-align:center;margin-top:6px">حدد موقعك أولاً لتتمكن من الطلب</div>'}`}}
 if(tab==='mine'){const l=db.orders.filter(o=>o.cid===me.id).reverse();
-b=l.map(o=>`<div class="card tap" onclick="openOrd(${o.id})"><div class="row"><b>طلب #${o.id}</b><span class="tag s-${o.status}">${custLabel(o)}</span></div>${custProg(o)}<div class="mut">${o.items.map(i=>esc(i.name)+' × '+i.q).join('، ')}</div><div>المجموع ${fm(oTot(o))}</div>${o.pm==='shamcash'&&o.ps!=='paid'?`<div class="tag" style="margin-top:6px">💳 ${o.ps==='submitted'?'بانتظار تأكيد الدفع':'بانتظار الدفع'}</div>`:''}${o.status==='new'&&(o.pm!=='shamcash'||o.ps==='pending')?`<button class="alt sm" style="margin-top:8px;color:var(--bad);border-color:var(--bad)" onclick="event.stopPropagation();cancelMine(${o.id})">إلغاء الطلب</button>`:''}</div>`).join('')||'<div class="card mut">لا توجد لديك طلبات بعد.</div>'}
+b=l.map(o=>`<div class="card tap" onclick="openOrd(${o.id})"><div class="row"><b>طلب #${o.id}</b><span class="tag s-${o.status}">${custLabel(o)}</span></div>${custProg(o)}<div class="mut">${o.items.map(i=>esc(i.name)+' × '+i.q).join('، ')}</div><div>المجموع ${fm(oTot(o))}</div>${o.status==='new'?'<div class="mut" style="font-size:12px;margin-top:4px">⏳ سيتم قبول الطلب خلال دقائق</div>':''}${o.pm==='shamcash'&&o.ps!=='paid'?`<div class="tag" style="margin-top:6px">💳 ${o.ps==='submitted'?'بانتظار تأكيد الدفع':'بانتظار الدفع'}</div>`:''}${o.status==='new'&&(o.pm!=='shamcash'||o.ps==='pending')?`<button class="alt sm" style="margin-top:8px;color:var(--bad);border-color:var(--bad)" onclick="event.stopPropagation();cancelMine(${o.id})">إلغاء الطلب</button>`:''}</div>`).join('')||'<div class="card mut">لا توجد لديك طلبات بعد.</div>'}
 if(tab==='acct')b=acctView();if(tab==='ord')b=ordView();
 const bar=['home','store','search'].includes(tab)&&cartCount()?`<div class="bar"><span>${cartCount()} منتج · ${fm(cartSum())}</span><button onclick="setTab('cart')">سلّتي</button></div>`:'';
 return (isV()?vnav():t)+b+bar}
@@ -419,7 +433,7 @@ const drv=db.users.filter(u=>u.role==='driver');
 const card=o=>`<div class="card st-${o.status}${isLate(o)?' late':''}"><div class="row"><b>طلب #${o.id}</b><span class="tag s-${o.status}">${STATUS[o.status]}</span></div>
 <div class="mut"><a href="#" class="lnk" onclick="openCust('${o.cid}');return false">${esc(o.custName)}</a> · ${esc(o.cust)}${o.place?' · '+esc(o.place):''}</div>${lateTag(o)}${payBox(o)}
 ${Object.entries(grp(o)).map(([sid,l])=>`<div class="store"><b>${esc(sname(sid))}</b> <span class="mut">${l.map(i=>esc(i.name)+' × '+i.q).join('، ')}</span><br><a class="btn alt sm" target="_blank" rel="noopener" href="${wa(sphone(sid),orderText(o,sid))}">واتساب للمحل</a></div>`).join('')}
-<div class="row" style="margin-top:6px"><span>منتجات ${fm(sub(o))} + توصيل ${fm(o.fee)}${o.disc?` − خصم ${fm(o.disc)}`:''}</span><a class="btn alt sm" target="_blank" rel="noopener" href="${wa(o.cust,'مرحباً، بخصوص طلبك #'+o.id)}">واتساب للزبون</a></div>${o.loc?`<div style="margin-top:6px">${mp(o)}</div>`:''}
+<div class="row" style="margin-top:6px"><span>منتجات ${fm(sub(o))} + توصيل ${fm(o.fee)}</span><a class="btn alt sm" target="_blank" rel="noopener" href="${wa(o.cust,'مرحباً، بخصوص طلبك #'+o.id)}">واتساب للزبون</a></div>${o.loc?`<div style="margin-top:6px">${mp(o)}</div>`:''}
 ${o.status==='new'?`<div class="row" style="margin-top:8px;gap:8px">${(o.pm!=='shamcash'||o.ps==='paid')?`<button class="acc" style="flex:1" onclick="acc(${o.id})">قبول الطلب</button>`:''}<button class="alt" onclick="rej(${o.id})">رفض الطلب</button></div>`:''}${['accepted','assigned'].includes(o.status)?`<select onchange="assign(${o.id},this.value)"><option value="">${o.driver?'تغيير السائق':'اختر سائقاً'}</option>${drv.filter(d=>d.id!==o.cid).map(d=>`<option value="${d.id}" ${d.id===o.driver?'selected':''}>${esc(d.name)} — ${dload(d.id)}</option>`).join('')}</select>`:''}
 ${o.driver?`<div class="mut">السائق: ${esc((db.users.find(u=>u.id===o.driver)||{}).name||'')}</div>`:''}<button class="alt sm" style="color:var(--bad);border-color:var(--bad);margin-top:8px" onclick="delOrder(${o.id})">حذف الطلب</button></div>`;
 const fin=o=>['delivered','cancelled'].includes(o.status),live=db.orders.filter(o=>!fin(o)).reverse(),done=db.orders.filter(fin).reverse().slice(0,10);
@@ -485,7 +499,7 @@ ${n?`<button class="acc" style="width:100%;margin-top:8px" onclick="adv(${o.id})
 function adv(id){const o=db.orders.find(o=>o.id===id),n=NEXT[o.status];if(!n)return;o.status=n[0];note(`${me.name}: ${n[1]} (طلب #${id})`);save();render()}
 
 /* ---------- core ---------- */
-function render(){$('app').innerHTML=!me?authView():head()+({customer:custView,admin:adminPage,driver:(dbr?custView:driverView),owner:(cmode?custView:ownerView)}[me.role])()}
+function render0(){$('app').innerHTML=!me?authView():head()+({customer:custView,admin:adminPage,driver:(dbr?custView:driverView),owner:(cmode?custView:ownerView)}[me.role])()}
 function beep(){try{const c=beep.c||(beep.c=new(window.AudioContext||window.webkitAudioContext)()),o=c.createOscillator(),g=c.createGain();o.frequency.value=880;g.gain.value=.25;o.connect(g);g.connect(c.destination);o.start();o.stop(c.currentTime+.3)}catch(e){}}
 function sync(){let r=null;try{r=localStorage.getItem(K)}catch(e){}
 if(r&&r!==last){load();me&&(me=db.users.find(u=>u.phone===me.phone)||me);const a=document.activeElement;if(!a||!/INPUT|SELECT|TEXTAREA/.test(a.tagName))render()}}
@@ -504,7 +518,7 @@ const e164=p=>'+'+intl(nph(p));
 let authBusy=false;
 db={fee:2000,notes:[],orders:[],stores:[],users:[],banner:{t:'اتصل نصل - مارع',s:''}};
 let prev={};
-const fail=e=>{console.error(e);alert(/موقوف|غير متوفرة|غير متاح|مغلق|فارغة|كود الخصم|الحد الأدنى|خارج منطقة|حدد موقعك|الدفع|إثبات|رقم العملية/.test((e&&e.message)||'')?e.message:'تعذّر تنفيذ العملية. تحقق من اتصال الإنترنت وحاول مرة أخرى.')};
+const fail=e=>{console.error(e);alert(/موقوف|غير متوفرة|غير متاح|مغلق|فارغة|خارج منطقة|حدد موقعك|الدفع|إثبات|السائق|غير مسموح|المرحلة/.test((e&&e.message)||'')?e.message:'تعذّر تنفيذ العملية. تحقق من اتصال الإنترنت وحاول مرة أخرى.')};
 const act=async p=>{const r=await p;if(r.error){fail(r.error);return false}await pull();render();return true};
 let SC=null,SM=null,pq=Promise.resolve(),pn=0;
 function pull(full){pn++;const p=pq.then(()=>pull_(full!==false)).catch(e=>console.error(e)).finally(()=>{pn--});pq=p;return p}
@@ -514,7 +528,7 @@ async function pull_(full){
  const ordQ=sb.from('orders').select('*').order('id',{ascending:false}).limit(200);
  let S=SC,o;
  if(full||!S){
-  const r=await Promise.all([ordQ,sb.from('stores').select('*').order('created_at'),sb.from('products').select('*').order('created_at'),sb.from('settings').select('*').eq('id',1).maybeSingle(),TQ(sb.from('sections').select('*').order('created_at')),TQ(sb.from('store_groups').select('*').order('pos')),TQ(sb.from('categories').select('*').order('pos')),TQ(sb.from('tickets').select('*').order('created_at',{ascending:false}).limit(100)),(ia||io)?TQ(sb.from('store_managers').select('*')):none,ia?TQ(sb.from('coupons').select('*').order('created_at',{ascending:false})):none,ia?sb.from('profiles').select('*').in('role',['driver','admin']):none,ia?TQ(sb.from('driver_invites').select('*')):none,(ia||id_)?TQ(sb.from('driver_ledger').select('*').order('created_at',{ascending:false}).limit(500)):none,(ia||id_)?TQ(sb.from('driver_settlements').select('*').order('created_at',{ascending:false}).limit(50)):none]);
+  const r=await Promise.all([ordQ,sb.from('stores').select('*').order('created_at'),sb.from('products').select('*').order('created_at'),sb.from('settings').select('*').eq('id',1).maybeSingle(),TQ(sb.from('sections').select('*').order('created_at')),TQ(sb.from('store_groups').select('*').order('pos')),TQ(sb.from('categories').select('*').order('pos')),TQ(sb.from('tickets').select('*').order('created_at',{ascending:false}).limit(100)),(ia||io)?TQ(sb.from('store_managers').select('*')):none,none,ia?sb.from('profiles').select('*').in('role',['driver','admin']):none,ia?TQ(sb.from('driver_invites').select('*')):none,(ia||id_)?TQ(sb.from('driver_ledger').select('*').order('created_at',{ascending:false}).limit(500)):none,(ia||id_)?TQ(sb.from('driver_settlements').select('*').order('created_at',{ascending:false}).limit(50)):none]);
   const bad=[r[0],r[1],r[2],r[3],r[10]].find(x=>x.error);if(bad)throw bad.error;
   o=r[0];S=SC={s:r[1].data,p:r[2].data,st:r[3].data,sc:r[4].data,gr:r[5].data,cg:r[6].data,tx:r[7].data,mg:r[8].data,cp:r[9].data,d:ia?r[10].data:null,iv:r[11].data,ld:r[12].data,sl:r[13].data};
   applyCats(S.cg);
@@ -524,13 +538,16 @@ async function pull_(full){
  const stores=SM.map(x=>({...x,open:x.man&&inHours(x.ot,x.ct)}));
  const orders=o.data.map(x=>({id:x.id,cust:x.customer_phone,cid:x.customer_id,settled:!!x.settled,disc:+x.discount||0,code:x.coupon_code,pm:x.pay_method||'cash',ps:x.pay_status||'cash',pref:x.pay_ref,pproof:x.pay_proof,custName:x.customer_name,place:x.place,loc:x.lat!=null?{lat:+x.lat,lng:+x.lng}:null,items:x.items.map(i=>({...i,price:+i.price})),fee:+x.fee,status:x.status,driver:x.driver_id,t:new Date(x.created_at).getTime()})).reverse();
  const users=S.d?S.d.map(u=>({id:u.id,name:u.name,phone:u.phone,role:u.role,shift:u.on_shift,sup:u.is_super})):[];
+ if(me.role==='customer'||(me.role==='owner'&&cmode)){orders.forEach(x=>{if(x.cid!==me.id)return;const b=prevC[x.id];if(b&&b!==x.status){const m={accepted:'تم قبول طلبك وهو قيد التجهيز ✅',assigned:'طلبك قيد التجهيز',picked:'طلبك في الطريق إليك 🛵',delivered:'تم تسليم طلبك ✅',cancelled:'تم إلغاء طلبك'}[x.status];if(m){toast('طلب #'+x.id+': '+m,4500);try{beep()}catch(e){}}}});prevC=Object.fromEntries(orders.filter(x=>x.cid===me.id).map(x=>[x.id,x.status]))}
  if(me.role==='admin')orders.forEach(x=>{const b=prev[x.id];if(b&&b!==x.status&&['picked','delivered'].includes(x.status))note((users.find(u=>u.id===x.driver)||{}).name+': '+(x.status==='picked'?'استلم الطلب':'سلّم الطلب')+' (طلب #'+x.id+')')});
  prev=Object.fromEntries(orders.map(x=>[x.id,x.status]));
  Object.keys(cart).forEach(k=>{if(!stores.some(z=>z.products.some(y=>y.id===k)))delete cart[k]});
  if(me.role==='admin'){const n=S.tx.filter(t=>t.status==='open').length;if(prevT!==null&&n>prevT)note('🛟 شكوى جديدة');prevT=n}
  if(me.role==='admin'){orders.forEach(x=>{if(x.ps==='submitted'&&prevP[x.id]!==undefined&&prevP[x.id]!=='submitted')note('💳 إثبات دفع جديد للطلب #'+x.id)});prevP=Object.fromEntries(orders.map(x=>[x.id,x.ps]))}
+ let sord=[],avd=[];
+ if(io){const ids=(S.mg||[]).filter(m=>m.phone===me.phone).map(m=>m.store_id);const rs=await Promise.all([...ids.map(id=>sb.rpc('store_orders',{p_store:id}).then(x=>({id,x}))),sb.rpc('available_drivers')]);const av=rs.pop();avd=(av&&!av.error&&av.data)||[];rs.forEach(({id,x})=>{if(!x.error)(x.data||[]).forEach(r=>sord.push({...r,sid:id}))})}
  const st=S.st;
- const nd={fee:st?+st.fee:2000,banner:{t:(st&&st.banner_t)||'اتصل نصل - مارع',s:(st&&st.banner_s)||''},stores,orders,users,invites:S.iv,secs:S.sc,grps:S.gr,mgrs:S.mg,tix:S.tx,cats:S.cg,cpns:S.cp,led:S.ld,sett:S.sl,wa:(st&&st.admin_whatsapp)||'',wan:(st&&st.wa_numbers)||{},cur:(st&&st.currency)||'TRY',area:(st&&st.area_lat!=null)?{lat:+st.area_lat,lng:+st.area_lng,km:+st.area_km}:null,sham:(st&&st.shamcash_on!==undefined)?{on:!!st.shamcash_on,code:st.shamcash_code||SHAM_CODE,qr:st.shamcash_qr||''}:null,rates:(st&&st.rates)||{},notes:db.notes};
+ const nd={fee:st?+st.fee:2000,banner:{t:(st&&st.banner_t)||'اتصل نصل - مارع',s:(st&&st.banner_s)||''},stores,orders,users,invites:S.iv,secs:S.sc,grps:S.gr,mgrs:S.mg,tix:S.tx,cats:S.cg,cpns:S.cp,led:S.ld,sett:S.sl,wa:(st&&st.admin_whatsapp)||'',wan:(st&&st.wa_numbers)||{},cur:(st&&st.currency)||'TRY',area:(st&&st.area_lat!=null)?{lat:+st.area_lat,lng:+st.area_lng,km:+st.area_km}:null,sham:(st&&st.shamcash_on!==undefined)?{on:!!st.shamcash_on,code:st.shamcash_code||SHAM_CODE,qr:st.shamcash_qr||''}:null,rates:(st&&st.rates)||{},sord,avd,notes:db.notes};
  const sig=JSON.stringify(nd);
  if(sig!==last){db=nd;if(full)saveCache(nd,S.cg);const a=document.activeElement;if(!(a&&/INPUT|SELECT|TEXTAREA/.test(a.tagName))){last=sig;render()}}
 }
@@ -538,7 +555,7 @@ function saveCache(nd,rows){try{localStorage.setItem('maraa_c2',JSON.stringify({
 function loadCache(){try{const c=JSON.parse(localStorage.getItem('maraa_c2')||'null');if(c&&c.v===2&&c.stores){applyCats(c.cats);Object.assign(db,{stores:c.stores,fee:c.fee,banner:c.banner,wa:c.wa,wan:c.wan,cur:c.cur,rates:c.rates,area:c.area,sham:c.sham,secs:c.secs||[],grps:c.grps||[]});db.stores.forEach(x=>{x.open=x.man&&inHours(x.ot,x.ct)})}}catch(e){}}
 function loadLeaflet(){return new Promise((res,rej)=>{if(typeof L!=='undefined')return res();const l=document.createElement('link');l.rel='stylesheet';l.href='https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css';document.head.appendChild(l);const sc=document.createElement('script');sc.src='https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js';sc.onload=()=>res();sc.onerror=()=>rej(new Error('leaflet'));document.head.appendChild(sc)})}
 async function enter(u,fresh){const r=await sb.from('profiles').select('*').eq('id',u.id).single();if(r.error)throw r.error;
- me={id:r.data.id,phone:r.data.phone,name:r.data.name,role:r.data.role,sup:!!r.data.is_super};tab=me.role==='admin'?'orders':me.role==='driver'?'jobs':me.role==='owner'?'oprod':'home';last='';loc=(r.data.lat!=null&&r.data.lng!=null)?{lat:+r.data.lat,lng:+r.data.lng}:null;if(db.stores&&db.stores.length)render();await pull();render();if(me.role==='customer'&&(fresh||!loc))openMap(true);if(me.role==='customer')setTimeout(()=>loadLeaflet().catch(()=>{}),2500)}
+ me={id:r.data.id,phone:r.data.phone,name:r.data.name,role:r.data.role,sup:!!r.data.is_super};tab=me.role==='admin'?'orders':me.role==='driver'?'jobs':me.role==='owner'?'oord':'home';last='';loc=(r.data.lat!=null&&r.data.lng!=null)?{lat:+r.data.lat,lng:+r.data.lng}:null;if(db.stores&&db.stores.length)render();await pull();render();if(me.role==='customer'&&(fresh||!loc))openMap(true);if(me.role==='customer')setTimeout(()=>loadLeaflet().catch(()=>{}),2500)}
 async function auth(){
  const e=$('err'),ph=nph($('ph').value),pw=$('pw').value;
  if(!/^\d{9,15}$/.test(ph))return e.textContent='أدخل رقم واتساب صحيحاً';
@@ -555,8 +572,8 @@ async function auth(){
 }
 async function logout(){me=null;cart={};loc=null;closeMap();tab='home';last='';render();await sb.auth.signOut({scope:'local'})}
 async function send(){if(!loc)return openMap(true);if(!(await sameUser()))return;const items=Object.entries(cart).map(([pid,q])=>({pid,q}));if(!items.length)return;
- const r=await sb.from('orders').insert({place:place.trim(),lat:loc?loc.lat:null,lng:loc?loc.lng:null,coupon_code:cpn?cpn.code:null,pay_method:(db.sham&&db.sham.on&&payM==='shamcash')?'shamcash':'cash',items}).select('id,pay_method').single();
- if(r.error)return fail(r.error);const nid=r.data&&r.data.id,sh=r.data&&r.data.pay_method==='shamcash';cart={};cpn=null;place='';payM='cash';await pull();if(sh&&nid){openOrd(nid)}else{tab='mine';render()}}
+ const r=await sb.from('orders').insert({place:place.trim(),lat:loc?loc.lat:null,lng:loc?loc.lng:null,pay_method:(db.sham&&db.sham.on&&payM==='shamcash')?'shamcash':'cash',items}).select('id,pay_method').single();
+ if(r.error)return fail(r.error);const nid=r.data&&r.data.id,sh=r.data&&r.data.pay_method==='shamcash';cart={};place='';payM='cash';await pull();if(nid){openOrd(nid);toast('تم إرسال طلبك ✅',3500)}else{tab='mine';render()}}
 function acc(id){act(sb.from('orders').update({status:'accepted'}).eq('id',id))}
 function rej(id){if(!confirm('هل تريد رفض هذا الطلب؟'))return;act(sb.from('orders').update({status:'cancelled'}).eq('id',id))}
 function assign(id,ph){if(!ph)return;const o=db.orders.find(o=>o.id===id),u={driver_id:ph};if(o.status==='accepted')u.status='assigned';act(sb.from('orders').update(u).eq('id',id))}
@@ -582,10 +599,6 @@ async function addDrv(){const p=nph($('dp').value),n=($('dn')&&$('dn').value.tri
 const CST=['new','accepted','picked','delivered'];
 function custLabel(o){return o.status==='assigned'?STATUS.accepted:STATUS[o.status]}
 function custProg(o){if(o.status==='cancelled')return '';const L=['تم إرسال الطلب','قيد التجهيز','في الطريق','تم التسليم'],i=CST.indexOf(o.status==='assigned'?'accepted':o.status);return `<div class="stp">${L.map((x,j)=>`<div class="${j<=i?'d':''}${j===i&&i<3?' cur':''}"><i>${j<=i?'✓':''}</i><small>${x}</small></div>`).join('')}</div>`}
-function go(t,c,x){tab=t;cat=c;sid=x;history.pushState({t,c,s:x,n:((history.state&&history.state.n)||0)+1},'');render();window.scrollTo(0,0)}
-function back(){if(history.state&&history.state.n>0)history.back();else{tab='home';cat=null;sid=null;render()}}
-window.addEventListener('popstate',e=>{const x=e.state||{t:'home',c:null,s:null};tab=x.t;cat=x.c;sid=x.s;render();window.scrollTo(0,0)});
-history.replaceState({t:'home',c:null,s:null,n:0},'');
 function openStore(id){stab='prod';sq2='';go('store',cat,id)}
 function pickCat(c){go('home',c,null)}
 function homeView(){
@@ -663,7 +676,6 @@ function delSec(id){if(confirm('هل تريد حذف هذا القسم؟'))act(s
 const isLate=o=>{const m=(Date.now()-o.t)/60000;return (o.status==='new'&&m>3)||(['accepted','assigned','picked'].includes(o.status)&&m>45)};
 const lateTag=o=>isLate(o)?`<div class="tag" style="background:var(--bad);color:#fff;display:inline-block;margin-top:4px">⏰ ${o.status==='new'?'لم يُقبل بعد':'تأخر التسليم'}</div>`:'';
 function dload(id){const n=db.orders.filter(o=>o.driver===id&&!['delivered','cancelled'].includes(o.status)).length;return n?'عنده '+n+(n===1?' طلب':' طلبات'):'متاح'}
-function adminPage(){return tab==='cust'?custPage():adminView()}
 function editStore(id){const s=db.stores.find(x=>x.id===id);if(!s)return;const n=prompt('اسم المتجر',s.name);if(n===null||!n.trim())return;const ph=prompt('رقم واتساب المتجر',s.phone||'');if(ph===null)return;act(sb.from('stores').update({name:n.trim(),phone:ph.trim()}).eq('id',id))}
 function editProd(id){const f=find(id);if(!f)return;const n=prompt('اسم المنتج',f.p.name);if(n===null)return;const v=prompt('السعر بالليرة التركية',f.p.price);if(v===null||v===''||isNaN(+v))return;const g=prompt('القسم داخل المتجر',f.p.g||'المنتجات');if(g===null)return;const k=prompt('الكمية المتوفرة (اتركها فارغة لعدم تحديد كمية)',f.p.stock==null?'':f.p.stock);if(k===null)return;act(sb.from('products').update({name:n.trim()||f.p.name,price:+v,grp:g.trim()||'المنتجات',stock:k.trim()===''?null:Math.max(0,parseInt(k)||0)}).eq('id',id))}
 function delProd(id){const f=find(id);if(f&&confirm('حذف المنتج "'+f.p.name+'"؟'))act(sb.from('products').delete().eq('id',id))}
@@ -728,10 +740,10 @@ async function openOrd(id){oid=id;odrv=null;go('ord',null,null);const o=db.order
 function ordView(){const o=db.orders.find(x=>x.id===oid);
  if(!o)return `<div class="card mut">الطلب غير موجود.</div><button onclick="setTab('mine')">رجوع إلى طلباتي</button>`;
  const d=odrv;
- return `${payCardC(o)}<h2>متابعة حالة الطلب</h2><div class="card">${custProg(o)}</div>
+ return `${payCardC(o)}${waitBox(o)}<h2>متابعة حالة الطلب</h2><div class="card">${custProg(o)}</div>
 ${d?`<div class="card"><b>معلومات السائق</b><div class="mut" style="margin:4px 0 10px">السائق: ${esc(d.name)}</div><div class="row" style="gap:8px"><a class="btn alt" style="flex:1;text-align:center" href="tel:${esc(d.phone)}">📞 اتصال السائق</a><a class="btn alt" style="flex:1;text-align:center" target="_blank" rel="noopener" href="${wa(d.phone,'مرحباً، بخصوص طلبي #'+o.id)}">💬 واتساب السائق</a></div></div>`:''}
 <h2>موقع التوصيل</h2><div class="card"><div class="row" style="justify-content:flex-start;gap:10px"><span style="font-size:22px">📍</span><div><b>${esc(o.custName)} - ${esc(o.cust)}</b><div class="mut">${o.place?esc(o.place):'حسب الموقع المحدد على الخريطة'}</div></div></div></div>
-<h2>تفاصيل الطلب</h2><div class="card">${o.items.map(i=>`<div class="row prow"><span>${esc(i.name)} × ${i.q}</span><b>${fm(i.price*i.q)}</b></div>`).join('')}<div class="row"><span>المجموع الفرعي</span><span>${fm(sub(o))}</span></div><div class="row"><span>رسوم التوصيل</span><span>${fm(o.fee)}</span></div>${o.disc?`<div class="row" style="color:#14612f"><span>خصم ${esc(o.code||'')}</span><span>-${fm(o.disc)}</span></div>`:''}<div class="row tot"><b>المجموع الكلي</b><b>${fm(oTot(o))}</b></div></div>
+<h2>تفاصيل الطلب</h2><div class="card">${o.items.map(i=>`<div class="row prow"><span>${esc(i.name)} × ${i.q}</span><b>${fm(i.price*i.q)}</b></div>`).join('')}<div class="row"><span>المجموع الفرعي</span><span>${fm(sub(o))}</span></div><div class="row"><span>رسوم التوصيل</span><span>${fm(o.fee)}</span></div><div class="row tot"><b>المجموع الكلي</b><b>${fm(oTot(o))}</b></div></div>
 ${db.wa?`<a class="btn big" style="display:block;text-align:center;margin:12px 0" target="_blank" rel="noopener" href="${wa(db.wa,'مرحباً، بخصوص طلبي #'+o.id)}">تواصل عبر واتساب</a>`:''}`}
 function inHours(a,b){if(!a||!b)return true;const t=v=>{const x=String(v).split(':');return (+x[0])*60+(+x[1])},n=new Date(),m=(n.getUTCHours()*60+n.getUTCMinutes()+180)%1440,f=t(a),e=t(b);return f<=e?(m>=f&&m<=e):(m>=f||m<=e)}
 function hoursRow(s){const t=v=>v?String(v).slice(0,5):'';return s.ot&&s.ct?`<div class="row prow"><span>ساعات الدوام</span><b>${t(s.ot)} - ${t(s.ct)}</b></div>`:''}
@@ -814,7 +826,6 @@ const isV=()=>!!me&&me.role==='driver'&&dbr;
 const isC=()=>!!me&&(me.role==='customer'||(me.role==='owner'&&cmode)||(me.role==='driver'&&dbr));
 function startCust(){cmode=true;tab='home';cat=null;render()}
 function startBrowse(){dbr=true;tab='home';cat=null;render()}
-function exitBrowse(){cmode=false;dbr=false;cat=null;tab=me.role==='driver'?'jobs':'oprod';render()}
 function vnav(){return `<div class="nav"><button class="on" onclick="cat=null;setTab('home')">🏠<small>الرئيسية</small></button><button onclick="exitBrowse()">↩️<small>رجوع</small></button></div>`}
 function head(){
  const r={customer:'زبون',admin:'مدير',driver:'سائق',owner:'مدير متجر'}[me.role];
@@ -827,11 +838,6 @@ function head(){
   if(tab==='ord'){const o=db.orders.find(x=>x.id===oid);return `<header class="top ttl"><button class="bk" onclick="back()" aria-label="رجوع">→</button><h1>طلب #${oid}</h1>${o?`<span class="pill">${custLabel(o)}</span>`:''}</header>`}
   return `<header class="top">${logo}${ex}${tab==='home'&&!cat?`<input readonly class="sbar" placeholder="🔍 ابحث عن متجر أو منتج" onclick="setTab('search')">`:''}</header>`}
  return `<header class="top">${logo}<div class="who"><span>${me.sup?'👑 ':''}${esc(me.name)} - ${r}</span><button class="alt sm" onclick="logout()">خروج</button></div></header>`}
-/* coupons (customer) */
-function cDisc(){if(!cpn)return 0;const s=cartSum();if(s<cpn.min)return 0;const t=s+db.fee;return Math.min(t,cpn.kind==='percent'?Math.round(t*cpn.value)/100:cpn.value)}
-function couponBox(){return cpn?`<div class="card row"><span>🎟️ كود الخصم: <b>${esc(cpn.code)}</b>${cartSum()<cpn.min?` <span class="mut">(الحد الأدنى ${fm(cpn.min)})</span>`:''}</span><button class="alt sm" onclick="rmCpn()">إزالة</button></div>`:`<div class="card"><div class="row" style="gap:8px"><input id="cp_in" placeholder="🎟️ كود خصم (اختياري)" style="margin:0;text-transform:uppercase"><button class="sm" onclick="useCpn()">تطبيق</button></div></div>`}
-async function useCpn(){const c=($('cp_in').value||'').trim();if(!c)return;const r=await sb.rpc('check_coupon',{p_code:c}),x=r.data&&r.data[0];if(r.error||!x||!x.ok)return alert(x&&x.msg?x.msg:'كود الخصم غير صالح');cpn={code:c.toUpperCase(),kind:x.kind,value:+x.value,min:+x.min_order};render()}
-function rmCpn(){cpn=null;render()}
 /* tickets */
 const TKS={open:'مفتوحة',progress:'قيد المتابعة',resolved:'تم الحل'},TKR={customer:'زبون',driver:'سائق',owner:'مدير متجر',admin:'مدير'};
 function openTicket(){const L=db.orders.filter(o=>o.cid===me.id||o.driver===me.id).slice(-15).reverse();
@@ -852,7 +858,6 @@ function driverTools(){return `<div class="row" style="gap:8px;margin:10px 0"><b
 /* admin: more menu, tickets, coupons, currency, ops center, admins */
 function adminNav(){const t=[['orders','🧾','الطلبات'],['stores','🏪','المحلات'],['drivers','🛵','السائقون'],[me.sup?'ops':'report',me.sup?'🛰️':'📊',me.sup?'العمليات':'التقرير'],['more','⋯','المزيد']],on=['tix','cpn','cur','cats','area','pay'].includes(tab)?'more':tab;
  return `<div class="nav">${t.map(([k,i,n])=>`<button class="${on===k?'on':''}" onclick="setTab('${k}')">${i}<small>${n}</small></button>`).join('')}</div>`}
-function adminPage(){if(tab==='cust')return custPage();const P={ops:opsView,more:morePage,tix:tixPage,cpn:cpnPage,cur:curPage,cats:catsPage,area:areaPage,pay:payPage}[tab];if(P)return P()+adminNav();if(tab==='report'&&me.sup)return subHead('📊 التقرير والحسابات')+adminView();return adminView()}
 const subHead=t=>`<div class="pghead"><button class="alt sm" onclick="setTab('more')">→</button><b>${t}</b></div>`;
 function morePage(){const o=(db.tix||[]).filter(t=>t.status==='open').length,it=(t,i,n,d)=>`<button class="mitem" onclick="setTab('${t}')"><span>${i}</span><div><b>${n}</b><small>${d}</small></div></button>`;
  return `<h2 style="margin-top:6px">المزيد</h2><div class="mgrid">${it('report','📊','التقرير والحسابات','المبيعات وتسوية السائقين')}${it('cpn','🎟️','أكواد الخصم','إنشاء وإدارة الكوبونات')}${it('tix','🛟','الشكاوى والدعم',o?o+' شكوى مفتوحة':'لا توجد شكاوى مفتوحة')}${it('cur','💱','العملة وأسعار الصرف','للمدير العام فقط')}${it('cats','🗂️','أقسام التطبيق','إضافة وتعديل وحذف الأقسام')}${it('area','🧭','نطاق الخدمة','المنطقة المسموح الطلب منها')}${it('pay','💳','طرق الدفع','شام كاش والدفع عند الباب')}</div>`}
@@ -861,13 +866,6 @@ function tixPage(){const l=(db.tix||[]).filter(t=>tkf==='all'||t.status===tkf),c
  return subHead('🛟 الشكاوى والدعم')+`<div class="row" style="gap:6px;justify-content:flex-start;flex-wrap:wrap;margin-bottom:8px">${ch}</div>`+(l.map(tkCard).join('')||'<div class="card mut">لا توجد شكاوى.</div>')}
 function setTk(id,st){act(sb.from('tickets').update({status:st,updated_at:new Date().toISOString()}).eq('id',id))}
 function noteTk(id){const t=db.tix.find(x=>x.id===id),n=prompt('ملاحظة أو رد للمستخدم',t.admin_note||'');if(n===null)return;act(sb.from('tickets').update({admin_note:n.trim()||null}).eq('id',id))}
-function cpnPage(){const l=db.cpns||[];
- return subHead('🎟️ أكواد الخصم')+`<div class="card"><input id="cp_c" placeholder="الكود (مثال: MARE10)" style="text-transform:uppercase"><div class="row" style="gap:8px"><select id="cp_k" style="margin:0"><option value="percent">نسبة %</option><option value="fixed">قيمة ثابتة ₺</option></select><input id="cp_v" type="number" step="any" inputmode="decimal" placeholder="القيمة" style="margin:0"></div><input id="cp_m" type="number" step="any" inputmode="decimal" placeholder="الحد الأدنى للطلب بالليرة (اختياري)"><input id="cp_u" type="number" inputmode="numeric" placeholder="عدد مرات الاستخدام (اختياري)"><label class="mut">تاريخ الانتهاء (اختياري)</label><input id="cp_e" type="date"><button class="acc" style="width:100%" onclick="addCpn()">إضافة الكود</button></div>`
- +(l.map(c=>`<div class="card"><div class="row"><b>${esc(c.code)}</b><span class="tag ${c.active?'ok':'off'}">${c.active?'فعّال':'موقوف'}</span></div><div class="mut">${c.kind==='percent'?c.value+'%':fm(c.value)} · استُخدم ${c.used}${c.max_uses?' من '+c.max_uses:''}${+c.min_order?' · حد أدنى '+fm(c.min_order):''}${c.expires_at?' · حتى '+new Date(c.expires_at).toLocaleDateString('ar'):''}</div><div class="row" style="gap:6px;justify-content:flex-start;margin-top:6px"><button class="alt sm" onclick="togCpn('${esc(c.code)}')">${c.active?'إيقاف':'تفعيل'}</button><button class="alt sm" style="color:var(--bad);border-color:var(--bad)" onclick="delCpn('${esc(c.code)}')">حذف</button></div></div>`).join('')||'<div class="card mut">لا توجد أكواد.</div>')}
-async function addCpn(){const c=$('cp_c').value.trim().toUpperCase(),k=$('cp_k').value,v=+$('cp_v').value;if(!c||!(v>0))return alert('أدخل الكود والقيمة');if(k==='percent'&&v>100)return alert('النسبة لا تتجاوز 100');
- const r=await sb.from('coupons').insert({code:c,kind:k,value:v,min_order:+$('cp_m').value||0,max_uses:$('cp_u').value?+$('cp_u').value:null,expires_at:$('cp_e').value?new Date($('cp_e').value+'T23:59:59').toISOString():null});if(r.error)return fail(r.error);await pull();render()}
-function togCpn(c){const x=db.cpns.find(y=>y.code===c);act(sb.from('coupons').update({active:!x.active}).eq('code',c))}
-function delCpn(c){if(confirm('حذف الكود؟'))act(sb.from('coupons').delete().eq('code',c))}
 function curPage(){const r=db.rates||{};if(!me.sup)return subHead('💱 العملة')+'<div class="card mut">تغيير العملة وأسعار الصرف من صلاحية المدير العام فقط.</div>';
  return subHead('💱 العملة وأسعار الصرف')+`<div class="card"><label class="mut">عملة العرض العامة للموقع</label><select id="cu_c">${[['TRY','الليرة التركية ₺'],['USD','الدولار $'],['SYP','الليرة السورية ل.س']].map(([k,n])=>`<option value="${k}" ${db.cur===k?'selected':''}>${n}</option>`).join('')}</select><label class="mut">1 ليرة تركية = كم دولار؟</label><input id="cu_u" type="number" step="any" inputmode="decimal" value="${r.USD||''}" placeholder="مثال: 0.025"><label class="mut">1 ليرة تركية = كم ليرة سورية؟</label><input id="cu_s" type="number" step="any" inputmode="decimal" value="${r.SYP||''}" placeholder="اكتب السعر الحالي"><div class="mut" style="margin-bottom:8px">تُدخل الأسعار دائماً بالليرة التركية، ثم تُحوَّل للعرض فقط. الفواتير القديمة تُعرض بسعر الصرف الحالي.</div><button class="acc" style="width:100%" onclick="saveCur()">حفظ</button></div>`}
 function saveCur(){const c=$('cu_c').value,u=+$('cu_u').value||0,v=+$('cu_s').value||0;if(c==='USD'&&!(u>0))return alert('أدخل سعر الصرف للدولار');if(c==='SYP'&&!(v>0))return alert('أدخل سعر الصرف للسورية');act(sb.from('settings').update({currency:c,rates:{USD:u,SYP:v}}).eq('id',1))}
@@ -887,7 +885,7 @@ function adminsHTML(){const l=db.users.filter((u,i,a)=>u.role==='admin'&&a.findI
 function applyCats(rows){if(!rows||!rows.length)return;CATS.length=0;rows.forEach(r=>CATS.push([r.slug,r.name,r.emoji||'🏷️',r.image_url||null,r.kind||'stores',r.color||null,r.wa_note||null,r.wa_msg||null]))}
 function cIcon(c){return c[3]?`<img loading="lazy" decoding="async" class="cimg" src="${esc(c[3])}" alt="">`:`<span>${c[2]}</span>`}
 function waAdmin(){const ks=CATS.filter(c=>c[4]==='wa'||c[4]==='sections');
- return `<h2>أرقام واتساب الطلبات</h2><div class="card"><div class="mut">لكل قسم يُطلب عبر واتساب رقمه الخاص. اكتب الرقم بصيغة 09xxxxxxxx أو 905xxxxxxxxx.</div>${ks.map(c=>`<label class="mut">${c[2]} ${esc(c[1])}</label><input id="aw_${c[0]}" type="tel" value="${esc((db.wan||{})[c[0]]||'')}">`).join('')||'<div class="mut">لا توجد أقسام تُطلب عبر واتساب.</div>'}<label class="mut">💬 رقم الدعم (يظهر في صفحة حسابي)</label><input id="aw" type="tel" value="${esc(db.wa||'')}"><button onclick="setWA()">حفظ الأرقام</button></div>`}
+ return `<h2>أرقام واتساب الطلبات</h2><div class="card"><div class="mut">لكل قسم يُطلب عبر واتساب رقمه الخاص. اكتب الرقم بصيغة 09xxxxxxxx أو 905xxxxxxxxx.</div>${ks.map(c=>`<label class="mut">${c[2]} ${esc(c[1])}</label><input id="aw_${c[0]}" type="tel" value="${esc((db.wan||{})[c[0]]||'')}">`).join('')||'<div class="mut">لا توجد أقسام تُطلب عبر واتساب.</div>'}<label class="mut">💬 رقم التواصل مع الإدارة (يظهر للزبون في صفحة الطلب وحسابي)</label><input id="aw" type="tel" value="${esc(db.wa||'')}"><button onclick="setWA()">حفظ الأرقام</button></div>`}
 function setWA(){const o={};CATS.filter(c=>c[4]==='wa'||c[4]==='sections').forEach(c=>{const e=$('aw_'+c[0]);if(e)o[c[0]]=e.value.trim()});act(sb.from('settings').update({admin_whatsapp:$('aw').value.trim(),wa_numbers:o}).eq('id',1))}
 function secsAdmin(){return CATS.filter(c=>c[4]==='sections').map(c=>`<h2>أقسام ${esc(c[1])}</h2><div class="card">${(db.secs||[]).filter(x=>x.cat===c[0]).map(x=>`<div class="row prow"><span>${esc(x.name)}</span><button class="alt sm" style="color:var(--bad);border-color:var(--bad)" onclick="delSec('${x.id}')">حذف</button></div>`).join('')}<input id="sn2_${c[0]}" placeholder="اسم القسم (مثال: دفاتر)"><button onclick="addSec('${c[0]}')">إضافة قسم</button></div>`).join('')}
 function addSec(c){const e=$('sn2_'+c),n=e&&e.value.trim();if(n)act(sb.from('sections').insert({cat:c,name:n}))}
@@ -903,12 +901,12 @@ async function saveCat(){const n=$('ct_n').value.trim();if(!n)return alert('أد
 async function delCat(slug){const n=db.stores.filter(x=>x.cat===slug).length;if(n)return alert('لا يمكن حذف قسم فيه '+n+' متجر. انقل متاجره إلى قسم آخر أولاً من تبويب المحلات.');if(!confirm('حذف هذا القسم؟'))return;const r=await sb.from('categories').delete().eq('slug',slug);if(r.error)return fail(r.error);await pull();render()}
 async function moveCat(i,d){const j=i+d;if(j<0||j>=CATS.length)return;const a=CATS.map(c=>({slug:c[0],name:c[1],emoji:c[2],image_url:c[3]||null,color:c[5]||null,kind:c[4]||'stores',wa_note:c[6]||null,wa_msg:c[7]||null}));[a[i],a[j]]=[a[j],a[i]];const r=await sb.from('categories').upsert(a.map((x,k)=>({...x,pos:k})),{onConflict:'slug'});if(r.error)return fail(r.error);await pull();render()}
 function homeView(){
- if(cat){const ci=CATS.find(x=>x[0]===cat)||[cat,'','🏷️',null,'stores'],kd=ci[4]||'stores',hd=`<div class="pghead"><button class="alt sm" onclick="back()">→</button><b>${ci[2]} ${esc(ci[1])}</b></div>`;
+ if(cat){const ci=CATS.find(x=>x[0]===cat)||[cat,'','🏷️',null,'stores'],kd=ci[4]||'stores',hd=`<div class="pghead"><button class="alt sm" onclick="back()">→</button><b>${ci[2]} ${esc(ci[1])}</b></div>${ci[3]?`<div class="catcover" style="background-image:url('${esc(ci[3])}')"><b>${esc(ci[1])}</b></div>`:''}`;
   if(kd==='wa'){const msg=ci[7]||'أريد الطلب من هذا القسم:',note=ci[6]||'اضغط الزر وأرسل لنا طلبك عبر واتساب، وسنؤمّنه ونوصله إلى بابك.';return hd+`<div class="card wacard"><div class="bigic">${cIcon(ci)}</div><h2>الطلب عبر واتساب</h2><p class="mut">${esc(note)}</p>${waNum(cat)?`<a class="btn acc big" style="display:block" target="_blank" rel="noopener" href="${waLink(msg,cat)}">💬 اطلب عبر واتساب</a>`:'<div class="mut">سيتم تفعيل الطلب عبر واتساب قريباً.</div>'}</div>`}
   if(kd==='sections'){const l=(db.secs||[]).filter(x=>x.cat===cat),msg=ci[7]||'أريد الطلب من هذا القسم:',note=ci[6]||'اضغط الزر وأرسل لنا طلبك عبر واتساب، أو اختر القسم أدناه.';return hd+(waNum(cat)?`<div class="card wacard"><div class="bigic">${cIcon(ci)}</div><h2>الطلب عبر واتساب</h2><p class="mut">${esc(note)}</p><a class="btn acc big" style="display:block" target="_blank" rel="noopener" href="${waLink(msg,cat)}">💬 اطلب عبر واتساب</a></div>`+(l.length?'<h2>الأقسام</h2>'+l.map(x=>`<a class="card secbtn" target="_blank" rel="noopener" href="${waLink('أريد من قسم «'+x.name+'»: ',cat)}"><b>${esc(x.name)}</b><span>💬</span></a>`).join(''):''):`<div class="empty"><span>⏳</span><b>قريباً</b><div class="mut">نعمل على تفعيل الطلب من هذا القسم</div></div>`)}
   const l=db.stores.filter(x=>x.cat===cat);return hd+(l.map(storeCard).join('')||`<div class="empty"><span>⏳</span><b>قريباً</b><div class="mut">نعمل على إضافة متاجر هذا القسم</div></div>`)}
  const bn=db.banner&&db.banner.t&&db.banner.t!=='اتصل نصل - مارع',l=db.stores.filter(x=>!hidCat(x.cat)).sort((a,b)=>(b.open?1:0)-(a.open?1:0));
- return `${bn?`<div class="hero"><b>${esc(db.banner.t)}</b>${db.banner.s?`<span>${esc(db.banner.s)}</span>`:''}</div>`:''}<h2>التصنيفات الرئيسية</h2><div class="cgrid">${CATS.map(c=>`<button class="ctile" style="background:${c[5]||CATC[c[0]]||'#e8f1fb'}" onclick="pickCat('${c[0]}')">${cIcon(c)}${esc(c[1])}</button>`).join('')}</div><h2>المتاجر</h2>`+(l.map(storeCard).join('')||'<div class="card mut">لا توجد متاجر بعد.</div>')}
+ return `${bn?`<div class="hero"><b>${esc(db.banner.t)}</b>${db.banner.s?`<span>${esc(db.banner.s)}</span>`:''}</div>`:''}<h2>التصنيفات الرئيسية</h2><div class="cgrid">${CATS.map(catTile).join('')}</div><h2>المتاجر</h2>`+(l.map(storeCard).join('')||'<div class="card mut">لا توجد متاجر بعد.</div>')}
 /* GPS-only location: no manual pin moving */
 function inArea(la,ln){const a=db.area;if(!a)return true;const R=6371,rd=x=>x*Math.PI/180,dl=rd(la-a.lat),dg=rd(ln-a.lng),h=Math.sin(dl/2)**2+Math.cos(rd(a.lat))*Math.cos(rd(la))*Math.sin(dg/2)**2;return 2*R*Math.asin(Math.sqrt(h))<=a.km}
 let gps=null;
@@ -937,7 +935,7 @@ function saveArea(){const la=+$('ar_la').value,ln=+$('ar_ln').value,km=+$('ar_km
 /* ================= v5: payments (cash / ShamCash) ================= */
 let payM='cash',prevP={};
 const prepaid=o=>o.pm==='shamcash'&&o.ps==='paid';
-function toast(m){const d=document.createElement('div');d.className='toast';d.textContent=m;document.body.appendChild(d);setTimeout(()=>d.remove(),1800)}
+function toast(m,ms){const d=document.createElement('div');d.className='toast';d.textContent=m;document.body.appendChild(d);setTimeout(()=>d.remove(),ms||1800)}
 function copyTxt(t){const done=()=>toast('تم نسخ العنوان ✅'),fb=()=>{const a=document.createElement('textarea');a.value=t;a.style.position='fixed';a.style.opacity='0';document.body.appendChild(a);a.select();try{document.execCommand('copy');done()}catch(e){alert('انسخ يدوياً: '+t)}a.remove()};
  if(navigator.clipboard&&window.isSecureContext)navigator.clipboard.writeText(t).then(done,fb);else fb()}
 function rateNote(t){const r=db.rates||{},p=[];if(+r.USD>0)p.push('$'+(t*r.USD).toLocaleString('en-US',{maximumFractionDigits:2}));if(+r.SYP>0)p.push((Math.round(t*r.SYP/100)*100).toLocaleString('en-US')+' ل.س');return p.length?`<div class="mut" style="text-align:center;font-size:13px">أو ما يعادله: ${p.join(' · ')}</div>`:''}
@@ -949,13 +947,13 @@ function payCardC(o){
  if(o.ps==='submitted')return `<div class="card"><b>⏳ تم إرسال إثبات التحويل</b><div class="mut">بانتظار تأكيد الإدارة وصول المبلغ، وبعدها يبدأ تجهيز طلبك.</div>${o.pref?`<div class="mut" style="margin-top:4px">رقم العملية: ${esc(o.pref)}</div>`:''}</div>`;
  const code=(db.sham&&db.sham.code)||SHAM_CODE,qr=(db.sham&&db.sham.qr)||SHAM_QR;
  return `<div class="card"><h2 style="margin:0 0 6px">📲 ادفع عبر شام كاش</h2><div class="mut">افتح تطبيق شام كاش، وامسح الباركود أو انسخ العنوان، ثم حوّل المبلغ التالي:</div><div class="amt">${fm(oTot(o))}</div>${rateNote(oTot(o))}<img class="qr" src="${qr}" alt="باركود شام كاش"><div class="code">${esc(code)}</div><button class="alt big" style="width:100%" onclick="copyTxt('${esc(code)}')">📋 نسخ العنوان</button>
-<label class="mut" style="margin-top:12px;display:block">رقم العملية (من إشعار شام كاش)</label><input id="pf_ref" placeholder="مثال: 123456789"><label class="mut">أو أرفق صورة الإيصال</label><input id="pf_proof" type="file" accept="image/*"><button class="acc big" style="width:100%" onclick="sendProof(${o.id})">✅ تم التحويل</button><div class="mut" style="font-size:12px;margin-top:6px">لا يبدأ تجهيز الطلب إلا بعد أن تؤكد الإدارة وصول المبلغ.</div></div>`}
+<label class="mut" style="margin-top:12px;display:block">أرفق صورة إيصال التحويل (اختياري)</label><input id="pf_proof" type="file" accept="image/*"><button class="acc big" style="width:100%" onclick="sendProof(${o.id})">✅ تم التحويل</button><div class="mut" style="font-size:12px;margin-top:6px">لا يبدأ تجهيز الطلب إلا بعد أن تؤكد الإدارة وصول المبلغ.</div></div>`}
 async function upProof(file){const b=await createImageBitmap(file),k=Math.min(1,1000/Math.max(b.width,b.height)),c=document.createElement('canvas');c.width=Math.round(b.width*k);c.height=Math.round(b.height*k);c.getContext('2d').drawImage(b,0,0,c.width,c.height);
  const blob=await new Promise(r=>c.toBlob(r,'image/webp',.8)),ext=blob.type==='image/webp'?'webp':'png',path=me.id+'/'+Date.now()+'.'+ext;
  const r=await sb.storage.from('proofs').upload(path,blob,{contentType:blob.type});if(r.error)throw r.error;return path}
-async function sendProof(id){const ref=($('pf_ref').value||'').trim(),f=$('pf_proof').files[0];if(!ref&&!f)return alert('أدخل رقم العملية أو أرفق صورة الإيصال');let path=null;
+async function sendProof(id){const f=$('pf_proof').files[0];let path=null;
  if(f){try{path=await upProof(f)}catch(e){return fail(e)}}
- const r=await sb.rpc('submit_payment',{p_id:id,p_ref:ref,p_proof:path});if(r.error)return fail(r.error);await pull();render()}
+ const r=await sb.rpc('submit_payment',{p_id:id,p_ref:null,p_proof:path});if(r.error)return fail(r.error);await pull();render()}
 function payBox(o){if(o.pm!=='shamcash')return `<div class="mut" style="font-size:12px">💵 كاش عند الاستلام</div>`;
  const st={pending:'بانتظار تحويل الزبون',submitted:'🔔 أرسل إثبات التحويل',paid:'✅ تم تأكيد الدفع'}[o.ps]||o.ps;
  return `<div class="payb ${o.ps}"><b>📲 شام كاش</b> · ${st}${o.pref?`<div class="mut">رقم العملية: ${esc(o.pref)}</div>`:''}${o.pproof?`<button class="alt sm" style="margin-top:4px" onclick="viewProof('${esc(o.pproof)}')">🧾 عرض الإيصال</button>`:''}${o.ps!=='paid'&&o.status==='new'?`<div class="row" style="gap:6px;margin-top:6px;justify-content:flex-start"><button class="sm" onclick="setPay(${o.id},'paid')">✅ تم استلام الدفع</button>${o.ps==='submitted'?`<button class="alt sm" onclick="setPay(${o.id},'pending')">↩️ لم يصل</button>`:''}</div>`:''}</div>`}
@@ -976,10 +974,97 @@ function payPage(){if(!me.sup)return subHead('💳 طرق الدفع')+'<div cla
 async function saveSham(){const c=($('sh_c').value||'').trim();if(!c)return alert('أدخل عنوان التحويل');let q=(db.sham&&db.sham.qr)||null;const f=$('sh_q').files[0];if(f){try{q=await upImg(f,1000)}catch(e){return fail(e)}}act(sb.from('settings').update({shamcash_code:c,shamcash_qr:q}).eq('id',1))}
 function togSham(){act(sb.from('settings').update({shamcash_on:!(db.sham&&db.sham.on)}).eq('id',1))}
 
+/* ================= v6: navigation fix, customer cleanups, category images ================= */
+let hk=0,fromPop=false,hs='',lastMid=null,prevC={};
+const navKey=()=>[tab,tab==='home'?(cat||''):'',(tab==='store'||tab==='astore')?(sid||''):'',tab==='ord'?(oid||''):''].join('|');
+function rootTab(){return !me?'home':me.role==='admin'?'orders':(me.role==='driver'&&!dbr)?'jobs':(me.role==='owner'&&!cmode)?'oord':'home'}
+function syncHist(){const mid=me?me.id:'',k=navKey();
+ if(mid!==lastMid){lastMid=mid;hs=k;hk=0;fromPop=false;history.replaceState({t:tab,c:cat,s:sid,o:oid,k:0,m:mid},'');return}
+ if(fromPop){fromPop=false;hs=k;return}
+ if(k===hs)return;hs=k;hk++;history.pushState({t:tab,c:cat,s:sid,o:oid,k:hk,m:mid},'')}
+function render(){const y=window.scrollY,k0=hs;render0();syncHist();const a=document.getElementById('app');
+ if(hs!==k0){window.scrollTo(0,0);a.classList.remove('pg');void a.offsetWidth;a.classList.add('pg')}else window.scrollTo(0,y)}
+window.addEventListener('popstate',e=>{const x=e.state,mid=me?me.id:'';fromPop=true;
+ if(!x||x.m!==mid){tab=rootTab();cat=null;sid=null;oid=null;hk=0}else{tab=x.t;cat=x.c;sid=x.s;oid=x.o;hk=x.k||0}
+ render()});
+function go(t,c,x){tab=t;cat=c;sid=x;render()}
+function back(){if(hk>0)history.back();else{tab=rootTab();cat=null;sid=null;render()}}
+function exitBrowse(){cmode=false;dbr=false;cat=null;tab=me.role==='driver'?'jobs':'oord';render()}
+/* customer: waiting box, contact admin, notifications */
+function waitBox(o){if(o.status!=='new')return '';const ok=(o.pm!=='shamcash'||o.ps==='paid');
+ return `<div class="card"><b>⏳ تم استلام طلبك</b><div class="mut" style="margin:4px 0 8px">${ok?'سيتم قبول الطلب خلال دقائق.':'سيتم قبول الطلب بعد تأكيد الدفع.'}</div>${db.wa?`<a class="btn alt" style="display:block;text-align:center" target="_blank" rel="noopener" href="${wa(db.wa,'مرحباً، بخصوص طلبي #'+o.id)}">💬 تواصل مع الإدارة</a>`:''}</div>`}
+/* categories: image fills the tile and the category header */
+function catTile(c){const col=c[5]||CATC[c[0]]||'#e8f1fb';
+ return c[3]?`<button class="ctile hasimg" style="background-image:url('${esc(c[3])}')" onclick="pickCat('${c[0]}')"><span class="lbl">${esc(c[1])}</span></button>`:`<button class="ctile" style="background:${col}" onclick="pickCat('${c[0]}')">${cIcon(c)}${esc(c[1])}</button>`}
+
+/* ================= v6b: order flow (assign driver), store-manager orders, reorganized admin ================= */
+const oack=new Set((()=>{try{return JSON.parse(localStorage.getItem('maraa_oack')||'[]')}catch(e){return[]}})());
+function oAck(id){oack.add(id);try{localStorage.setItem('maraa_oack',JSON.stringify([...oack]))}catch(e){}render()}
+setInterval(()=>{if(me&&me.role==='owner'&&!cmode&&(db.sord||[]).some(o=>o.status==='new'&&o.pay_ok&&!o.driver_id&&!oack.has(o.id))){beep();try{navigator.vibrate&&navigator.vibrate([300,150,300])}catch(e){}}},3000);
+function dloadN(id){return db.orders.filter(o=>o.driver===id&&['accepted','assigned','picked'].includes(o.status)).length}
+function drvList(){if(me.role==='admin')return db.users.filter(u=>u.role==='driver').map(d=>({id:d.id,name:d.name,shift:!!d.shift,load:dloadN(d.id)}));return (db.avd||[]).map(d=>({id:d.id,name:d.name,shift:!!d.on_shift,load:+d.active||0}))}
+function drvState(d){return !d.shift?{k:'off',t:'⚪ غير متصل',r:2}:d.load===0?{k:'free',t:'🟢 متاح',r:0}:{k:'busy',t:'🟡 مشغول ('+d.load+')',r:1}}
+function openAssign(id){const o=(me.role==='admin'?db.orders:(db.sord||[])).find(x=>x.id===id);if(!o)return;const cur=o.driver||o.driver_id||'',l=drvList().filter(d=>d.id!==o.cid).sort((a,b)=>drvState(a).r-drvState(b).r);
+ sheet(`<h2 style="margin-top:0">🛵 اختر السائق · طلب #${id}</h2>${l.map(d=>{const st=drvState(d);return `<div class="card row"><div><b>${esc(d.name)}</b><div class="mut" style="font-size:12px">${st.t}</div></div><button class="${st.k==='free'?'acc':'alt'} sm" onclick="assignDriver(${id},'${d.id}')">${cur===d.id?'✓ الحالي':'تعيين'}</button></div>`}).join('')||'<div class="card mut">لا يوجد سائقون.</div>'}<button class="alt big" style="width:100%" onclick="closeSheet()">إغلاق</button>`)}
+async function assignDriver(id,did){const r=await sb.rpc('assign_driver',{p_order:id,p_driver:did});if(r.error)return fail(r.error);closeSheet();toast('تم تعيين السائق ✅',2500);await pull();render()}
+/* store manager */
+function curStore(){if(me&&me.role==='admin')return db.stores.find(x=>x.id===sid);const l=myStores();return l.find(s=>s.id===ocur)||l[0]}
+function oOrd(s){const l=(db.sord||[]).filter(o=>o.sid===s.id),live=l.filter(o=>!['delivered','cancelled'].includes(o.status)),fin=l.filter(o=>['delivered','cancelled'].includes(o.status)).slice(0,8);
+ const card=o=>{const fresh=o.status==='new'&&o.pay_ok&&!o.driver_id&&!oack.has(o.id),can=['new','accepted','assigned'].includes(o.status)&&o.pay_ok;
+  return `<div class="card${fresh?' st-new':''}">${fresh?`<div class="alert row"><span>🔔 طلب جديد لمتجرك</span><button class="sm" onclick="oAck(${o.id})">علمت</button></div>`:''}<div class="row"><b>#${o.id}</b><span class="tag s-${o.status}">${STATUS[o.status]}</span><span class="mut" style="font-size:12px;margin-inline-start:auto">${ago(new Date(o.created_at).getTime())}</span></div><div class="store">${(o.items||[]).map(i=>esc(i.name)+' × '+i.q).join('، ')}</div>${!o.pay_ok?'<div class="payb">⏳ بانتظار دفع الزبون عبر شام كاش</div>':''}<div class="mut" style="margin-top:4px">${o.driver_name?'🛵 '+esc(o.driver_name):'لم يُعيَّن سائق بعد'}</div>${can?`<button class="${o.driver_id?'alt':'acc'}" style="width:100%;margin-top:8px" onclick="openAssign(${o.id})">🛵 ${o.driver_id?'تغيير السائق':'اختيار السائق المتاح'}</button>`:''}</div>`};
+ return `<h2 style="margin-top:6px">طلبات متجرك</h2>`+(live.map(card).join('')||'<div class="empty"><span>🧾</span><b>لا توجد طلبات جارية</b><div class="mut">سيظهر هنا أي طلب جديد مع تنبيه صوتي</div></div>')+(fin.length?'<h2>آخر الطلبات المنتهية</h2>'+fin.map(card).join(''):'')}
+function ownerView(){
+ const l=myStores(),s=curStore(),T=['oord','oprod','ogrp','ooff','oset'].includes(tab)?tab:'oord',
+  badge=(db.sord||[]).filter(o=>o.status==='new'&&o.pay_ok&&!o.driver_id).length,
+  nb=(t,i,n,b)=>`<button class="${T===t?'on':''}" onclick="setTab('${t}')">${i}${b?`<i class="bdg">${b}</i>`:''}<small>${n}</small></button>`,
+  nav=`<div class="nav">${nb('oord','🧾','الطلبات',badge)}${nb('oprod','🍽️','المنتجات')}${nb('ogrp','📂','الأقسام')}${nb('ooff','🏷️','العروض')}${nb('oset','⚙️','الإعدادات')}</div>`;
+ if(!s)return `<div class="empty"><span>⏳</span><b>لا يوجد متجر مرتبط بحسابك</b><div class="mut">تواصل مع الإدارة لربط حسابك بمتجرك</div></div>`+nav;
+ const sw=l.length>1?`<select onchange="ocur=this.value;render()">${l.map(x=>`<option value="${x.id}" ${x.id===s.id?'selected':''}>${esc(x.name)}</option>`).join('')}</select>`:'';
+ const top=`${sw}<div class="card ohead"><div style="flex:1"><b style="font-size:18px">${esc(s.name)}</b><div class="mut">${catI(s.cat)[2]} ${esc(catI(s.cat)[1])}${s.man&&!s.open?' · خارج ساعات الدوام':''}</div></div><button class="${s.man?'':'alt'}" onclick="togStore('${s.id}')">${s.man?'🟢 مفتوح':'⚪ مغلق'}</button></div><button class="alt" style="width:100%;margin-bottom:8px" onclick="startCust()">🛍️ وضع الزبون: تصفح المتاجر والطلب منها</button>`;
+ return top+({oord:oOrd,oprod:oProd,ogrp:oGrp,ooff:oOff,oset:oSet}[T])(s)+nav}
+/* admin: orders */
+let ofl='act',ast='prod';
+function ordCard(o){
+ const g=grp(o),fin=['delivered','cancelled'].includes(o.status),payOk=(o.pm!=='shamcash'||o.ps==='paid'),dr=db.users.find(u=>u.id===o.driver)||{},acts=[];
+ if(o.status==='new'&&payOk)acts.push(`<button class="acc" onclick="acc(${o.id})">✅ قبول</button>`);
+ if(['new','accepted','assigned'].includes(o.status)&&payOk)acts.push(`<button class="${o.driver?'alt':'acc'}" onclick="openAssign(${o.id})">🛵 ${o.driver?'تغيير السائق':'تعيين سائق'}</button>`);
+ if(o.status==='new')acts.push(`<button class="alt" onclick="rej(${o.id})">رفض</button>`);
+ const sec=[...Object.keys(g).map(k=>`<a class="btn alt sm" target="_blank" rel="noopener" href="${wa(sphone(k),orderText(o,k))}">💬 ${esc(sname(k))}</a>`),`<a class="btn alt sm" target="_blank" rel="noopener" href="${wa(o.cust,'مرحباً، بخصوص طلبك #'+o.id)}">💬 الزبون</a>`,mp(o),(o.driver&&dr.phone)?`<a class="btn alt sm" target="_blank" rel="noopener" href="${wa(dr.phone,'🔔 لديك طلب جديد #'+o.id)}">🔔 نبّه السائق</a>`:'',`<button class="alt sm" style="color:var(--bad);border-color:var(--bad)" onclick="delOrder(${o.id})">🗑</button>`].join('');
+ return `<div class="card oc st-${o.status}${isLate(o)?' late':''}"><div class="row"><b>#${o.id}</b><span class="tag s-${o.status}">${STATUS[o.status]}</span><span class="mut" style="font-size:12px;margin-inline-start:auto">${ago(o.t)}</span></div>${lateTag(o)}<div style="margin:4px 0"><a href="#" class="lnk" onclick="openCust('${o.cid}');return false">${esc(o.custName)}</a> <span class="mut" dir="ltr">${esc(o.cust)}</span>${o.place?`<div class="mut" style="font-size:13px">📍 ${esc(o.place)}</div>`:''}</div>${Object.entries(g).map(([k,l])=>`<div class="store"><b>${esc(sname(k))}</b> <span class="mut">${l.map(i=>esc(i.name)+' × '+i.q).join('، ')}</span></div>`).join('')}<div class="row" style="margin-top:6px"><span class="mut">${fm(sub(o))} + توصيل ${fm(o.fee)}</span><b>${fm(oTot(o))}</b></div>${payBox(o)}${o.driver?`<div class="mut" style="margin-top:4px">🛵 ${esc(dr.name||'')}</div>`:''}${(acts.length&&!fin)?`<div class="oc-act">${acts.join('')}</div>`:''}<div class="oc-sec">${sec}</div></div>`}
+function ordersPage(){
+ const un=db.notes.filter(n=>!n.seen),O=db.orders.slice().reverse(),live=O.filter(o=>!['delivered','cancelled'].includes(o.status)),fin=O.filter(o=>['delivered','cancelled'].includes(o.status)).slice(0,20),
+ ch=[['act','الجارية ('+live.length+')'],['done','المنتهية']].map(([k,n])=>`<button class="${ofl===k?'':'alt'} sm" onclick="ofl='${k}';render()">${n}</button>`).join('');
+ return statBar()+un.map(n=>`<div class="alert row"><span>${esc(n.t)}</span><button class="sm" onclick="seen(${n.id})">تم</button></div>`).join('')+`<div class="row" style="gap:6px;justify-content:flex-start;margin:8px 0">${ch}</div>`+((ofl==='act'?live:fin).map(ordCard).join('')||'<div class="card mut">لا توجد طلبات.</div>')}
+/* admin: stores */
+function storesPage(){return `<div class="row"><h2 style="margin:6px 0">المتاجر</h2><button class="acc sm" onclick="openNewStore()">➕ متجر جديد</button></div>`+(db.stores.map(s=>`<div class="card tap srow" onclick="openAStore('${s.id}')">${s.image_url?`<img class="pimg" loading="lazy" src="${esc(s.image_url)}" alt="">`:`<span class="av big">${catI(s.cat)[2]}</span>`}<div style="flex:1;min-width:0"><b>${esc(s.name)}</b><div class="mut" style="font-size:12px">${esc(catI(s.cat)[1])} · ${s.products.length} منتج</div></div><span class="tag ${s.open?'ok':'off'}">${s.open?'مفتوح':(s.man?'خارج الدوام':'مغلق')}</span></div>`).join('')||'<div class="empty"><span>🏪</span><b>لا توجد متاجر بعد</b></div>')}
+function openNewStore(){sheet(`<h2 style="margin-top:0">متجر جديد</h2><input id="sn" placeholder="اسم المتجر"><select id="sc">${CATS.map(c=>`<option value="${c[0]}">${c[2]} ${esc(c[1])}</option>`).join('')}</select><input id="sp" type="tel" placeholder="رقم واتساب المتجر (اختياري)"><label class="mut">صورة المتجر (اختيارية)</label><input id="si" type="file" accept="image/*"><div class="row" style="gap:8px;margin-top:8px"><button class="acc big" style="flex:1" onclick="addStore()">إضافة</button><button class="alt big" onclick="closeSheet()">إلغاء</button></div>`)}
+async function addStore(){const n=$('sn').value.trim();if(!n)return;const ph=$('sp').value.trim(),c=$('sc').value,f=$('si').files[0];let u=null;try{if(f)u=await upImg(f,1000)}catch(e){return fail(e)}closeSheet();act(sb.from('stores').insert({name:n,phone:ph,cat:c,image_url:u}))}
+function openAStore(id){ast='prod';sid=id;go('astore',null,id)}
+function aData(s){return `<div class="card"><div class="row"><span>الاسم</span><b>${esc(s.name)}</b></div><div class="row prow"><span>رقم واتساب المتجر</span><b dir="ltr">${esc(s.phone||'—')}</b></div><button class="alt" style="width:100%;margin-top:8px" onclick="editStore('${s.id}')">✏️ تعديل الاسم والرقم</button><label class="mut" style="display:block;margin-top:10px">القسم</label><select onchange="setStoreCat('${s.id}',this.value)">${CATS.map(c=>`<option value="${c[0]}" ${c[0]===s.cat?'selected':''}>${c[2]} ${esc(c[1])}</option>`).join('')}</select></div>${mgrBox(s)}<button class="alt big" style="width:100%;color:var(--bad);border-color:var(--bad);margin-top:10px" onclick="delStore('${s.id}')">🗑 حذف المتجر</button>`}
+function astorePage(){const s=db.stores.find(x=>x.id===sid);if(!s)return storesPage();
+ const T=[['prod','🍽️','المنتجات'],['grp','📂','الأقسام'],['off','🏷️','العروض'],['set','⚙️','الدوام والصورة'],['data','👤','البيانات والمسؤولون']],
+ hd=`<div class="pghead"><button class="alt sm" onclick="back()">→</button><b>${esc(s.name)}</b><button class="${s.man?'':'alt'} sm" onclick="togStore('${s.id}')">${s.man?'🟢 مفتوح':'⚪ مغلق'}</button></div>`,
+ tabs=`<div class="tabs2 scroll">${T.map(([k,i,n])=>`<button class="${ast===k?'on':''}" onclick="ast='${k}';render()">${i} ${n}</button>`).join('')}</div>`;
+ return hd+tabs+({prod:oProd,grp:oGrp,off:oOff,set:oSet,data:aData}[ast])(s)}
+/* admin: drivers, settings, admins, menu, nav, router */
+function driversPage(){return `<div class="row"><h2 style="margin:6px 0">السائقون</h2><button class="acc sm" onclick="openNewDrv()">➕ إضافة سائق</button></div>`+(db.users.filter(u=>u.role==='driver').map(d=>{const st=drvState({shift:d.shift,load:dloadN(d.id)});return `<div class="card"><div class="row"><div><b>${esc(d.name)}</b><div class="mut" style="font-size:12px" dir="ltr">${esc(d.phone)}</div></div><span class="tag">${st.t}</span></div><div class="row" style="gap:6px;justify-content:flex-start;margin-top:8px"><button class="alt sm" onclick="editDrv('${d.id}')">✏️ تعديل الاسم</button><a class="btn alt sm" target="_blank" rel="noopener" href="${wa(d.phone,'مرحباً')}">💬 واتساب</a><button class="alt sm" style="color:var(--bad);border-color:var(--bad)" onclick="delDrv('${d.id}')">🗑 حذف</button></div></div>`}).join('')||'<div class="card mut">لا يوجد سائقون مسجّلون.</div>')+pendHTML()}
+function openNewDrv(){sheet(`<h2 style="margin-top:0">إضافة سائق</h2><div class="mut" style="margin-bottom:6px">اكتب اسمه ورقمه. عندما يسجّل حساباً بهذا الرقم يصبح سائقاً تلقائياً.</div><input id="dn" placeholder="اسم السائق"><input id="dp" type="tel" placeholder="رقم هاتف السائق"><div class="row" style="gap:8px"><button class="acc big" style="flex:1" onclick="addDrv();closeSheet()">إضافة</button><button class="alt big" onclick="closeSheet()">إلغاء</button></div>`)}
+function settingsPage(){return subHead('⚙️ الإعدادات العامة')+`<h2>رسوم التوصيل</h2><div class="card"><input id="fee" type="number" step="any" value="${db.fee}"><button class="acc" style="width:100%" onclick="setFee()">حفظ الرسوم</button></div><h2>لافتة العروض</h2><div class="card"><div class="mut">لا تظهر للزبائن إلا عندما تكتب عرضاً حقيقياً.</div><input id="bt" value="${esc(db.banner.t)}"><input id="bs" value="${esc(db.banner.s)}"><button class="acc" style="width:100%" onclick="setBanner()">حفظ اللافتة</button></div>${waAdmin()}${secsAdmin()}`}
+function admPage(){return subHead('👑 المدراء')+adminsHTML()}
+function morePage(){const o=(db.tix||[]).filter(t=>t.status==='open').length,it=(t,i,n,d)=>`<button class="mitem" onclick="setTab('${t}')"><span>${i}</span><div><b>${n}</b><small>${d}</small></div></button>`;
+ return `<h2 style="margin-top:6px">المزيد</h2><div class="mgrid">${it('report','📊','التقرير والحسابات','المبيعات وتسوية السائقين')}${it('tix','🛟','الشكاوى والدعم',o?o+' شكوى مفتوحة':'لا توجد شكاوى مفتوحة')}${it('set','⚙️','الإعدادات العامة','رسوم التوصيل واللافتة وأرقام واتساب')}${it('cats','🗂️','أقسام التطبيق','إضافة وتعديل وحذف الأقسام')}${it('area','🧭','نطاق الخدمة','المنطقة المسموح الطلب منها')}${it('pay','💳','طرق الدفع','شام كاش والدفع عند الباب')}${it('cur','💱','العملة وأسعار الصرف','للمدير العام فقط')}${it('adm','👑','المدراء','إضافة وإزالة المدراء')}</div>`}
+function adminNav(){const t=[['orders','🧾','الطلبات'],['stores','🏪','المحلات'],['drivers','🛵','السائقون'],[me.sup?'ops':'report',me.sup?'🛰️':'📊',me.sup?'العمليات':'التقرير'],['more','⋯','المزيد']],on=tab==='astore'?'stores':['tix','cats','area','pay','cur','set','adm'].includes(tab)?'more':tab;
+ return `<div class="nav">${t.map(([k,i,n])=>`<button class="${on===k?'on':''}" onclick="setTab('${k}')">${i}<small>${n}</small></button>`).join('')}</div>`}
+function adminPage(){if(tab==='cust')return custPage();
+ const P={ops:opsView,more:morePage,tix:tixPage,cur:curPage,cats:catsPage,area:areaPage,pay:payPage,set:settingsPage,adm:admPage,orders:ordersPage,stores:storesPage,astore:astorePage,drivers:driversPage}[tab];
+ if(P)return P()+adminNav();
+ if(tab==='report'&&me.sup)return subHead('📊 التقرير والحسابات')+adminView();
+ return adminView()}
+
 loadCache();
 (async()=>{
  try{const r=await sb.auth.getSession();if(r.data.session)await enter(r.data.session.user);else render()}catch(e){console.error(e);render()}
- let tick=0;setInterval(()=>{if(!me||document.hidden||pn>0)return;tick++;pull(tick%6===0)},10000);
+ let tick=0;setInterval(()=>{if(!me||document.hidden||pn>0)return;tick++;if(me.role!=='owner'&&tick%2)return;pull(tick%12===0)},5000);
  document.addEventListener('visibilitychange',()=>{if(!document.hidden&&me&&pn===0)pull(true)});
  let rtT=null,rtF=false;const rtp=full=>{rtF=rtF||full;clearTimeout(rtT);rtT=setTimeout(()=>{const f=rtF;rtF=false;pull(f)},250)};
  ['orders','stores','products','profiles','tickets','driver_ledger','driver_settlements'].reduce((ch,t)=>ch.on('postgres_changes',{event:'*',schema:'public',table:t},()=>rtp(t!=='orders')),sb.channel('live-all')).subscribe();
